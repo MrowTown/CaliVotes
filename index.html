@@ -6,124 +6,59 @@
   <title>Cali Reign Tour Vote</title>
   <script src="https://www.google.com/recaptcha/api.js?render=YOUR_RECAPTCHA_SITE_KEY_HERE"></script>
   <style>
-    body { font-family: 'Arial', sans-serif; background: #000; color: #fff; padding: 20px; max-width: 600px; margin: 0 auto; }
-    h1 { text-align: center; color: #ff69b4; }
-    label { display: block; margin: 15px 0 5px; }
-    input, select { width: 100%; padding: 10px; background: #111; border: 1px solid #ff69b4; color: #fff; border-radius: 5px; }
-    button { width: 100%; padding: 15px; background: #ff69b4; border: none; color: #000; font-weight: bold; margin-top: 20px; border-radius: 5px; cursor: pointer; }
-    .payment { display: none; margin-top: 20px; }
+    body { 
+      font-family: 'Arial', sans-serif; 
+      background: #000; 
+      color: #fff; 
+      padding: 20px; 
+      max-width: 600px; 
+      margin: 0 auto; 
+      min-height: 100vh;
+    }
+    h1 { text-align: center; color: #ff69b4; margin-bottom: 10px; }
+    p { text-align: center; line-height: 1.5; }
+    label { display: block; margin: 18px 0 8px; font-weight: bold; }
+    input, select { 
+      width: 100%; 
+      padding: 12px; 
+      background: #111; 
+      border: 1px solid #ff69b4; 
+      color: #fff; 
+      border-radius: 8px; 
+      font-size: 16px;
+    }
+    button { 
+      width: 100%; 
+      padding: 16px; 
+      background: #ff69b4; 
+      border: none; 
+      color: #000; 
+      font-weight: bold; 
+      font-size: 18px;
+      margin-top: 30px; 
+      border-radius: 8px; 
+      cursor: pointer; 
+    }
+    button:hover { background: #ff8bd4; }
+    .payment { display: none; margin-top: 25px; }
     .qr { text-align: center; margin: 20px 0; }
-    .qr img { max-width: 300px; width: 100%; border: 2px solid #ff69b4; border-radius: 10px; }
-    #status { margin-top: 20px; text-align: center; font-weight: bold; }
+    .qr p { margin: 15px 0 10px; font-size: 18px; }
+    .qr img { 
+      max-width: 300px; 
+      width: 100%; 
+      border: 3px solid #ff69b4; 
+      border-radius: 12px; 
+    }
+    #status { 
+      margin-top: 30px; 
+      text-align: center; 
+      font-weight: bold; 
+      font-size: 18px;
+      min-height: 60px;
+    }
   </style>
 </head>
 <body>
   <h1>Vote for Cali Reign's Next Tour City 👑✨</h1>
-  <p>Each vote = $5. Claim as many as you paid for. Screenshot proof required.</p>
-
-  <form id="voteForm">
-    <label>Name (optional)</label>
-    <input type="text" id="name">
-
-    <label>Discord Handle (optional)</label>
-    <input type="text" id="discord">
-
-    <label>Email (required for confirmation)</label>
-    <input type="email" id="email" required>
-
-    <label>City you're voting for</label>
-    <input type="text" id="city" placeholder="e.g. Miami" required>
-
-    <label>Number of votes you're claiming</label>
-    <input type="number" id="votes" min="1" required>
-
-    <label>Payment method used</label>
-    <select id="payment" required>
-      <option value="">Select...</option>
-      <option value="cashapp">Cash App</option>
-      <option value="venmo">Venmo</option>
-      <option value="sol">Solana</option>
-      <option value="eth">Ethereum</option>
-      <option value="btc">Bitcoin</option>
-    </select>
-
-    <div id="paymentInfo" class="payment"></div>
-
-    <button type="submit">Submit Vote Claim</button>
-  </form>
-
-  <div id="status"></div>
-
-  <script>
-    const EXEC_URL = 'https://script.google.com/macros/s/AKfycbxgXz2Bh1-75jaqd0JQFZJS2xBaqlKrDCeAX4Tc6h2n6nOJnwE4kd0Y3I-FqquXIOMGAg/exec'; // Replace if you redeploy
-    const SITE_KEY = 'YOUR_RECAPTCHA_SITE_KEY_HERE';
-
-    const paymentInfo = document.getElementById('paymentInfo');
-    const paymentSelect = document.getElementById('payment');
-
-    const qrMap = {
-      cashapp: '<div class="qr"><p>Cash App: $calireign</p><img src="cashapp-qr.png" alt="Cash App QR"></div>',
-      venmo: '<div class="qr"><p>Venmo: @calireign</p><img src="venmo-qr.png" alt="Venmo QR"></div>',
-      sol: '<div class="qr"><p>Solana address: YOUR_SOL_ADDRESS</p><img src="sol-qr.png" alt="Sol QR"></div>',
-      eth: '<div class="qr"><p>Ethereum address: YOUR_ETH_ADDRESS</p><img src="eth-qr.png" alt="ETH QR"></div>',
-      btc: '<div class="qr"><p>Bitcoin address: YOUR_BTC_ADDRESS</p><img src="btc-qr.png" alt="BTC QR"></div>'
-    };
-
-    paymentSelect.addEventListener('change', () => {
-      const method = paymentSelect.value;
-      paymentInfo.innerHTML = qrMap[method] || '';
-      paymentInfo.style.display = method ? 'block' : 'none';
-    });
-
-    document.getElementById('voteForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const status = document.getElementById('status');
-      status.textContent = 'Submitting...';
-
-      const data = {
-        action: 'submitVote',
-        name_optional: document.getElementById('name').value.trim(),
-        discord_handle_optional: document.getElementById('discord').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        city: document.getElementById('city').value.trim(),
-        votes_claimed: parseInt(document.getElementById('votes').value),
-        payment_method_selected: paymentSelect.value,
-        // recaptchaToken: await grecaptcha.execute(SITE_KEY, {action: 'submit'}) // uncomment if reCAPTCHA active
-      };
-
-      // Get IP for rate limiting (best effort)
-      try {
-        const ipRes = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipRes.json();
-        data.ip = ipData.ip;
-      } catch (_) { data.ip = 'unknown'; }
-
-      try {
-        const response = await fetch(EXEC_URL, {
-          method: 'POST',
-          mode: 'cors',
-          redirect: 'follow',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'  // Permanent CORS fix
-          },
-          body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (result.submissionId) {
-          status.innerHTML = `<p style="color:#0f0">Success! Your submission ID: <strong>${result.submissionId.substring(0,8)}</strong></p>
-                              <p>Check your email for the upload link. We'll review ASAP 💖</p>`;
-          document.getElementById('voteForm').reset();
-          paymentInfo.innerHTML = '';
-          paymentInfo.style.display = 'none';
-        } else {
-          status.innerHTML = `<p style="color:#f00">Error: ${result.error || 'Unknown'}</p>`;
-        }
-      } catch (err) {
-        status.innerHTML = `<p style="color:#f00">Network error: ${err.message}</p>`;
-      }
-    });
-  </script>
-</body>
-</html>
+  <p>Every $5 sent = 1 vote. Send payment → fill this form → upload screenshot proof.</p>
+  <p>We approve
