@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vote for Cali Reign's Tour!</title>
+  <title>Vote for Cali's Tour City!</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://www.google.com/recaptcha/api.js?render=6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn"></script>
   <style>
@@ -78,7 +78,7 @@
     let submissionId = null;
 
     function submitDeclaration() {
-      if (document.getElementById('hp').value) return; // honeypot
+      if (document.getElementById('hp').value) return;
 
       const data = {
         action: 'submitVote',
@@ -94,21 +94,21 @@
       grecaptcha.ready(() => {
         grecaptcha.execute('6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn', {action: 'submit'}).then(token => {
           data.recaptchaToken = token;
-          fetch(backendUrl, {method: 'POST', body: JSON.stringify(data)})
+          fetch(backendUrl, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {'Content-Type': 'text/plain'}
+          })
             .then(r => r.json())
             .then(json => {
-              if (json.error) {
-                alert(json.error);
-                return;
+              if (json.error) alert(json.error);
+              else {
+                submissionId = json.submissionId;
+                localStorage.setItem('submissionId', submissionId);
+                showInvoice(data);
               }
-              submissionId = json.submissionId;
-              localStorage.setItem('submissionId', submissionId);
-              showInvoice(data);
             })
-            .catch(err => {
-              console.error(err);
-              alert('Connection issue – try again');
-            });
+            .catch(() => alert('Connection issue – try again'));
         });
       });
     }
@@ -161,7 +161,11 @@
           imageBase64: e.target.result,
           mimeType: file.type
         };
-        fetch(backendUrl, {method: 'POST', body: JSON.stringify(payload)})
+        fetch(backendUrl, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: {'Content-Type': 'text/plain'}
+        })
           .then(r => r.json())
           .then(json => {
             if (json.success) {
@@ -174,7 +178,6 @@
       reader.readAsDataURL(file);
     }
 
-    // Magic link support
     const params = new URLSearchParams(window.location.search);
     if (params.has('id')) {
       submissionId = params.get('id');
