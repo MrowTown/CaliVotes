@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vote for Cali Reign's Tour!</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://www.google.com/recaptcha/api.js?render=6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn"></script> <!-- REPLACE WITH YOUR ACTUAL SITE KEY -->
+  <script src="https://www.google.com/recaptcha/api.js?render=6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn"></script>
   <style>
     body { background:#C8A2C8; color:#000; font-family:'Poppins',sans-serif; padding:20px; text-align:center; }
     h1 { color:#FF69B4; }
@@ -66,7 +66,7 @@
     const backendUrl = 'https://script.google.com/macros/s/AKfycbxgXz2Bh1-75jaqd0JQFZJS2xBaqlKrDCeAX4Tc6h2n6nOJnwE4kd0Y3I-FqquXIOMGAg/exec';
 
     const cities = [
-      "New York City, New York","Los Angeles, California","Chicago, Illinois","Houston, Texas","Phoenix, Arizona","Philadelphia, Pennsylvania","San Antonio, Texas","San Diego, California","Dallas, Texas","San Jose, California","Austin, Texas","Jacksonville, Florida","Fort Worth, Texas","Columbus, Ohio","Indianapolis, Indiana","Charlotte, North Carolina","San Francisco, California","Seattle, Washington","Denver, Colorado","Oklahoma City, Oklahoma","Nashville, Tennessee","El Paso, Texas","Washington, D.C., District of Columbia","Boston, Massachusetts","Las Vegas, Nevada","Portland, Oregon","Detroit, Michigan","Louisville, Kentucky","Memphis, Tennessee","Baltimore, Maryland","Milwaukee, Wisconsin","Albuquerque, New Mexico","Fresno, California","Tucson, Arizona","Sacramento, California","Mesa, Arizona","Kansas City, Missouri","Atlanta, Georgia","Omaha, Nebraska","Raleigh, North Carolina","Miami, Florida","Long Beach, California","Virginia Beach, Virginia","Oakland, California","Minneapolis, Minnesota","Tulsa, Oklahoma","Bakersfield, California","Wichita, Kansas","Arlington, Texas","Aurora, Colorado","Tampa, Florida","New Orleans, Louisiana","Cleveland, Ohio","Anaheim, California","Honolulu, Hawaii","Henderson, Nevada","Stockton, California","Lexington, Kentucky","Corpus Christi, Texas","Riverside, California","Santa Ana, California","Orlando, Florida","Irvine, California","Cincinnati, Ohio","Newark, New Jersey","Saint Paul, Minnesota","Pittsburgh, Pennsylvania","Greensboro, North Carolina","St. Louis, Missouri","Lincoln, Nebraska","Plano, Texas","Anchorage, Alaska","Durham, North Carolina","Jersey City, New Jersey","Chandler, Arizona","Chula Vista, California","Buffalo, New York","North Las Vegas, Nevada","Gilbert, Arizona","Madison, Wisconsin","Reno, Nevada","Toledo, Ohio","Fort Wayne, Indiana","Lubbock, Texas","St. Petersburg, Florida","Laredo, Texas","Irving, Texas","Chesapeake, Virginia","Winston-Salem, North Carolina","Glendale, Arizona","Scottsdale, Arizona","Garland, Texas","Boise, Idaho","Norfolk, Virginia"
+      "Albuquerque, New Mexico","Anaheim, California","Anchorage, Alaska","Arlington, Texas","Arlington, Virginia","Atlanta, Georgia","Aurora, Colorado","Austin, Texas","Bakersfield, California","Baltimore, Maryland","Boise, Idaho","Boston, Massachusetts","Buffalo, New York","Cape Coral, Florida","Chandler, Arizona","Charlotte, North Carolina","Chesapeake, Virginia","Chicago, Illinois","Chula Vista, California","Cincinnati, Ohio","Cleveland, Ohio","Colorado Springs, Colorado","Columbus, Ohio","Corpus Christi, Texas","Dallas, Texas","Denver, Colorado","Detroit, Michigan","Durham, North Carolina","El Paso, Texas","Enterprise, Nevada","Fort Wayne, Indiana","Fort Worth, Texas","Fresno, California","Frisco, Texas","Garland, Texas","Gilbert, Arizona","Glendale, Arizona","Greensboro, North Carolina","Henderson, Nevada","Honolulu, Hawaii","Houston, Texas","Indianapolis, Indiana","Irvine, California","Irving, Texas","Jacksonville, Florida","Jersey City, New Jersey","Kansas City, Missouri","Laredo, Texas","Las Vegas, Nevada","Lexington, Kentucky","Lincoln, Nebraska","Long Beach, California","Los Angeles, California","Louisville, Kentucky","Lubbock, Texas","Madison, Wisconsin","Memphis, Tennessee","Mesa, Arizona","Miami, Florida","Milwaukee, Wisconsin","Minneapolis, Minnesota","Nashville, Tennessee","New Orleans, Louisiana","New York City, New York","Newark, New Jersey","North Las Vegas, Nevada","Oakland, California","Oklahoma City, Oklahoma","Omaha, Nebraska","Orlando, Florida","Philadelphia, Pennsylvania","Phoenix, Arizona","Pittsburgh, Pennsylvania","Plano, Texas","Port St. Lucie, Florida","Portland, Oregon","Raleigh, North Carolina","Reno, Nevada","Richmond, Virginia","Riverside, California","Sacramento, California","San Antonio, Texas","San Diego, California","San Francisco, California","San Jose, California","Santa Ana, California","Scottsdale, Arizona","Seattle, Washington","St. Louis, Missouri","St. Paul, Minnesota","St. Petersburg, Florida","Stockton, California","Tampa, Florida","Toledo, Ohio","Tucson, Arizona","Tulsa, Oklahoma","Virginia Beach, Virginia","Washington, D.C., District of Columbia","Wichita, Kansas","Winston-Salem, North Carolina"
     ];
     const datalist = document.getElementById('cities');
     cities.forEach(c => {
@@ -92,7 +92,7 @@
       };
 
       grecaptcha.ready(() => {
-        grecaptcha.execute('6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn', {action: 'submit'}).then(token => { // REPLACE WITH YOUR SITE KEY
+        grecaptcha.execute('6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn', {action: 'submit'}).then(token => {
           data.recaptchaToken = token;
           fetch(backendUrl, {method: 'POST', body: JSON.stringify(data)})
             .then(r => r.json())
@@ -113,25 +113,25 @@
       const amount = data.votes_claimed * 5;
       document.getElementById('invoiceText').innerHTML = `Send <strong>$${amount}</strong> for <strong>${data.votes_claimed}</strong> votes to <strong>${data.city}</strong>`;
 
-   let details = '';
-switch (data.payment_method_selected) {
-  case 'CashApp':
-    details = '$yourmomwarnedyou <br><img src="cashapp-qr.png" alt="CashApp QR">'; 
-    break;
-  case 'Venmo':
-    details = '@yourmomwarnedyou <br><img src="venmo-qr.png" alt="Venmo QR">'; 
-    break;
-  case 'SOL':
-    details = 'GNA2U9vAetNriGAfeziZjZruJZ1xR9ZLYFSeJJsgZDWR <br><img src="sol-qr.png" alt="SOL QR">'; 
-    break;
-  case 'ETH':
-    details = '0x016e552bdA243f69DA29b86041e911312fAFA95b <br><img src="eth-qr.png" alt="ETH QR">'; 
-    break;
-  case 'BTC':
-    details = 'bc1q7chqcjg27yv0prm9n4lqzekp5exrwdllr9p2gq <br><img src="btc-qr.png" alt="BTC QR">'; 
-    break;
-}
-document.getElementById('paymentDetails').innerHTML = details;
+      let details = '';
+      switch (data.payment_method_selected) {
+        case 'CashApp':
+          details = '$yourmomwarnedyou<br><img src="cashapp-qr.png" alt="CashApp QR">';
+          break;
+        case 'Venmo':
+          details = '@yourmomwarnedyou<br><img src="venmo-qr.png" alt="Venmo QR">';
+          break;
+        case 'SOL':
+          details = 'Contact Cali for SOL address<br><img src="sol-qr.png" alt="SOL QR">';
+          break;
+        case 'ETH':
+          details = 'Contact Cali for ETH address<br><img src="eth-qr.png" alt="ETH QR">';
+          break;
+        case 'BTC':
+          details = 'Contact Cali for BTC address<br><img src="btc-qr.png" alt="BTC QR">';
+          break;
+      }
+      document.getElementById('paymentDetails').innerHTML = details;
     }
 
     function showUpload() {
@@ -162,7 +162,8 @@ document.getElementById('paymentDetails').innerHTML = details;
               document.getElementById('step3').style.display = 'none';
               document.getElementById('thanks').style.display = 'block';
             } else alert(json.error || 'Upload failed');
-          });
+          })
+          .catch(() => alert('Connection issue – try again'));
       };
       reader.readAsDataURL(file);
     }
