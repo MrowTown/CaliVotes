@@ -1,10 +1,143 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Upload your shit, fool!</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Upload Payment Proof</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--ok:#00ffb0;--danger:#ff245a;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:760px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 8px;font-size:20px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .drop{
+      border:2px dashed rgba(255,255,255,.18);
+      border-radius:16px;
+      padding:18px;
+      text-align:center;
+      background:rgba(255,255,255,.03);
+    }
+    input,button{border-radius:14px;border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px 12px;}
+    button{cursor:pointer;font-weight:800;background:var(--pink);border:none;color:#000;}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;overflow:auto;}
+    .ok{border-color:rgba(0,255,176,.25);background:rgba(0,255,176,.10)}
+    .err{border-color:rgba(255,36,90,.25);background:rgba(255,36,90,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    img.preview{max-width:100%;border-radius:14px;border:1px solid var(--stroke);margin-top:12px;display:none}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  </style>
 </head>
 <body>
-    <h1>Hello, World!</h1>
-    <p>This is a simple HTML page.</p>
+  <div class="wrap">
+    <div class="card">
+      <h1>Upload payment screenshot</h1>
+      <p>Use the link from your email. If your link is expired, submit a new vote claim to get a fresh upload link.</p>
+
+      <div class="drop" id="drop">
+        <div style="font-weight:800;margin-bottom:6px;">Drag & drop an image here</div>
+        <div class="small">…or choose a file:</div>
+        <div class="row" style="justify-content:center;margin-top:10px;">
+          <input id="file" type="file" accept="image/*" />
+          <button id="uploadBtn" disabled>Upload</button>
+        </div>
+        <div class="small" style="margin-top:10px;">Token detected: <code id="tokenText">—</code></div>
+      </div>
+
+      <img id="preview" class="preview" />
+
+      <div id="ok" class="msg ok"></div>
+      <div id="err" class="msg err"></div>
+
+      <div class="small" style="margin-top:12px;opacity:.85">
+        If you have trouble uploading, email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CHANGE THIS ONE LINE ONLY
+    const EXEC_URL = "PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE"; // must end with /exec
+
+    const $ = (id) => document.getElementById(id);
+    const ok = $("ok"), err = $("err");
+    const uploadBtn = $("uploadBtn");
+    const fileInput = $("file");
+    const preview = $("preview");
+    const tokenText = $("tokenText");
+
+    function show(el, html){
+      ok.style.display="none"; err.style.display="none";
+      el.innerHTML = html;
+      el.style.display="block";
+    }
+
+    const token = new URLSearchParams(location.search).get("token") || "";
+    tokenText.textContent = token || "—";
+
+    let base64Image = "";
+
+    function readFileAsDataURL(file){
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function post(action, payload){
+      const res = await fetch(EXEC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload })
+      });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return { error: text }; }
+    }
+
+    async function handleFile(file){
+      if (!file) return;
+      base64Image = await readFileAsDataURL(file);
+      preview.src = base64Image;
+      preview.style.display = "block";
+      uploadBtn.disabled = !token || !base64Image;
+    }
+
+    fileInput.addEventListener("change", async () => {
+      try { await handleFile(fileInput.files[0]); }
+      catch (e){ show(err, `<b>Error:</b> ${String(e)}`); }
+    });
+
+    const drop = $("drop");
+    drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.style.borderColor = "rgba(255,45,166,.8)"; });
+    drop.addEventListener("dragleave", () => { drop.style.borderColor = "rgba(255,255,255,.18)"; });
+    drop.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      drop.style.borderColor = "rgba(255,255,255,.18)";
+      try { await handleFile(e.dataTransfer.files[0]); }
+      catch (er){ show(err, `<b>Error:</b> ${String(er)}`); }
+    });
+
+    uploadBtn.addEventListener("click", async () => {
+      ok.style.display="none"; err.style.display="none";
+
+      if (!EXEC_URL || EXEC_URL.includes("PASTE_YOUR")) {
+        return show(err, `<b>Error:</b> You need to set <code>EXEC_URL</code> in <code>upload.html</code>.`);
+      }
+      if (!token) return show(err, `<b>Error:</b> Missing token in URL.`);
+      if (!base64Image) return show(err, `<b>Error:</b> Choose an image first.`);
+
+      uploadBtn.disabled = true;
+      const res = await post("uploadScreenshot", { token, screenshot: base64Image });
+      uploadBtn.disabled = false;
+
+      if (res.error) return show(err, `<b>Error:</b><br><pre style="white-space:pre-wrap;margin:0">${res.error}</pre>`);
+      show(ok, `<b>Uploaded.</b> Your screenshot was received.`);
+    });
+  </script>
 </body>
 </html>
