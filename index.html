@@ -3,188 +3,127 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vote for Cali's Tour City!</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://www.google.com/recaptcha/api.js?render=6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn"></script>
+  <title>Cali Reign Tour Vote</title>
+  <script src="https://www.google.com/recaptcha/api.js?render=YOUR_RECAPTCHA_SITE_KEY_HERE"></script>
   <style>
-    body { background:#C8A2C8; color:#000; font-family:'Poppins',sans-serif; padding:20px; text-align:center; }
-    h1 { color:#FF69B4; }
-    input, select, button { 
-      background:#FF69B4; color:#000; border:none; border-radius:8px; padding:12px; margin:8px 0; width:90%; max-width:400px; font-size:16px; 
-    }
-    button { background:#00FFFF; cursor:pointer; font-weight:bold; }
-    #step1 { display:block; }
-    #step2, #step3, #thanks { display:none; }
-    .honeypot { display:none; }
-    #paymentDetails img { max-width:300px; margin:20px 0; }
-    a { color:#00FFFF; }
+    body { font-family: 'Arial', sans-serif; background: #000; color: #fff; padding: 20px; max-width: 600px; margin: 0 auto; }
+    h1 { text-align: center; color: #ff69b4; }
+    label { display: block; margin: 15px 0 5px; }
+    input, select { width: 100%; padding: 10px; background: #111; border: 1px solid #ff69b4; color: #fff; border-radius: 5px; }
+    button { width: 100%; padding: 15px; background: #ff69b4; border: none; color: #000; font-weight: bold; margin-top: 20px; border-radius: 5px; cursor: pointer; }
+    .payment { display: none; margin-top: 20px; }
+    .qr { text-align: center; margin: 20px 0; }
+    .qr img { max-width: 300px; width: 100%; border: 2px solid #ff69b4; border-radius: 10px; }
+    #status { margin-top: 20px; text-align: center; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>Vote for Cali's Tour City!</h1>
+  <h1>Vote for Cali Reign's Next Tour City 👑✨</h1>
+  <p>Each vote = $5. Claim as many as you paid for. Screenshot proof required.</p>
 
-  <div id="step1">
-    <input type="email" id="email" placeholder="Email (required)" required>
-    <input type="text" id="name" placeholder="Name (optional)">
-    <input type="text" id="discord" placeholder="Discord (optional)">
-    <input type="text" id="city" list="cities" placeholder="City (type or select)" required>
-    <datalist id="cities"></datalist>
-    <input type="number" id="votes" min="1" max="1000" placeholder="Number of votes ($5 each)" required>
-    <select id="paymentMethod" required>
-      <option value="">Choose payment method</option>
-      <option value="CashApp">CashApp</option>
-      <option value="Venmo">Venmo</option>
-      <option value="SOL">SOL (Crypto)</option>
-      <option value="ETH">ETH (Crypto)</option>
-      <option value="BTC">BTC (Crypto)</option>
+  <form id="voteForm">
+    <label>Name (optional)</label>
+    <input type="text" id="name">
+
+    <label>Discord Handle (optional)</label>
+    <input type="text" id="discord">
+
+    <label>Email (required for confirmation)</label>
+    <input type="email" id="email" required>
+
+    <label>City you're voting for</label>
+    <input type="text" id="city" placeholder="e.g. Miami" required>
+
+    <label>Number of votes you're claiming</label>
+    <input type="number" id="votes" min="1" required>
+
+    <label>Payment method used</label>
+    <select id="payment" required>
+      <option value="">Select...</option>
+      <option value="cashapp">Cash App</option>
+      <option value="venmo">Venmo</option>
+      <option value="sol">Solana</option>
+      <option value="eth">Ethereum</option>
+      <option value="btc">Bitcoin</option>
     </select>
-    <input class="honeypot" type="text" id="hp" tabindex="-1" autocomplete="off">
-    <button onclick="submitDeclaration()">Submit Vote</button>
-  </div>
 
-  <div id="step2">
-    <p id="invoiceText"></p>
-    <div id="paymentDetails"></div>
-    <p><a href="mailto:calireign@protonmail.com">Contact Cali for other crypto</a></p>
-    <button onclick="showUpload()">I Paid – Upload Proof Now</button>
-    <button onclick="later()">I'll upload later (check email)</button>
-  </div>
+    <div id="paymentInfo" class="payment"></div>
 
-  <div id="step3">
-    <p>Upload your payment screenshot:</p>
-    <input type="file" id="screenshot" accept="image/*" required>
-    <button onclick="uploadNow()">Upload</button>
-  </div>
+    <button type="submit">Submit Vote Claim</button>
+  </form>
 
-  <div id="thanks">
-    <h2>Thanks! Waiting for Cali to approve 💖</h2>
-    <p>Your votes will appear on the leaderboard once verified.</p>
-    <p><a href="leaderboard.html">View Leaderboard</a></p>
-  </div>
+  <div id="status"></div>
 
   <script>
-    const backendUrl = 'https://script.google.com/macros/s/AKfycbxgXz2Bh1-75jaqd0JQFZJS2xBaqlKrDCeAX4Tc6h2n6nOJnwE4kd0Y3I-FqquXIOMGAg/exec';
+    const EXEC_URL = 'https://script.google.com/macros/s/AKfycbxgXz2Bh1-75jaqd0JQFZJS2xBaqlKrDCeAX4Tc6h2n6nOJnwE4kd0Y3I-FqquXIOMGAg/exec'; // Replace if you redeploy
+    const SITE_KEY = 'YOUR_RECAPTCHA_SITE_KEY_HERE';
 
-    const cities = [
-      "Albuquerque, New Mexico","Anaheim, California","Anchorage, Alaska","Arlington, Texas","Arlington, Virginia","Atlanta, Georgia","Aurora, Colorado","Austin, Texas","Bakersfield, California","Baltimore, Maryland","Boise, Idaho","Boston, Massachusetts","Buffalo, New York","Cape Coral, Florida","Chandler, Arizona","Charlotte, North Carolina","Chesapeake, Virginia","Chicago, Illinois","Chula Vista, California","Cincinnati, Ohio","Cleveland, Ohio","Colorado Springs, Colorado","Columbus, Ohio","Corpus Christi, Texas","Dallas, Texas","Denver, Colorado","Detroit, Michigan","Durham, North Carolina","El Paso, Texas","Enterprise, Nevada","Fort Wayne, Indiana","Fort Worth, Texas","Fresno, California","Frisco, Texas","Garland, Texas","Gilbert, Arizona","Glendale, Arizona","Greensboro, North Carolina","Henderson, Nevada","Honolulu, Hawaii","Houston, Texas","Indianapolis, Indiana","Irvine, California","Irving, Texas","Jacksonville, Florida","Jersey City, New Jersey","Kansas City, Missouri","Laredo, Texas","Las Vegas, Nevada","Lexington, Kentucky","Lincoln, Nebraska","Long Beach, California","Los Angeles, California","Louisville, Kentucky","Lubbock, Texas","Madison, Wisconsin","Memphis, Tennessee","Mesa, Arizona","Miami, Florida","Milwaukee, Wisconsin","Minneapolis, Minnesota","Nashville, Tennessee","New Orleans, Louisiana","New York City, New York","Newark, New Jersey","North Las Vegas, Nevada","Oakland, California","Oklahoma City, Oklahoma","Omaha, Nebraska","Orlando, Florida","Philadelphia, Pennsylvania","Phoenix, Arizona","Pittsburgh, Pennsylvania","Plano, Texas","Port St. Lucie, Florida","Portland, Oregon","Raleigh, North Carolina","Reno, Nevada","Richmond, Virginia","Riverside, California","Sacramento, California","San Antonio, Texas","San Diego, California","San Francisco, California","San Jose, California","Santa Ana, California","Scottsdale, Arizona","Seattle, Washington","St. Louis, Missouri","St. Paul, Minnesota","St. Petersburg, Florida","Stockton, California","Tampa, Florida","Toledo, Ohio","Tucson, Arizona","Tulsa, Oklahoma","Virginia Beach, Virginia","Washington, D.C., District of Columbia","Wichita, Kansas","Winston-Salem, North Carolina"
-    ];
-    const datalist = document.getElementById('cities');
-    cities.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c;
-      datalist.appendChild(opt);
+    const paymentInfo = document.getElementById('paymentInfo');
+    const paymentSelect = document.getElementById('payment');
+
+    const qrMap = {
+      cashapp: '<div class="qr"><p>Cash App: $calireign</p><img src="cashapp-qr.png" alt="Cash App QR"></div>',
+      venmo: '<div class="qr"><p>Venmo: @calireign</p><img src="venmo-qr.png" alt="Venmo QR"></div>',
+      sol: '<div class="qr"><p>Solana address: YOUR_SOL_ADDRESS</p><img src="sol-qr.png" alt="Sol QR"></div>',
+      eth: '<div class="qr"><p>Ethereum address: YOUR_ETH_ADDRESS</p><img src="eth-qr.png" alt="ETH QR"></div>',
+      btc: '<div class="qr"><p>Bitcoin address: YOUR_BTC_ADDRESS</p><img src="btc-qr.png" alt="BTC QR"></div>'
+    };
+
+    paymentSelect.addEventListener('change', () => {
+      const method = paymentSelect.value;
+      paymentInfo.innerHTML = qrMap[method] || '';
+      paymentInfo.style.display = method ? 'block' : 'none';
     });
 
-    let submissionId = null;
-
-    function submitDeclaration() {
-      if (document.getElementById('hp').value) return;
+    document.getElementById('voteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const status = document.getElementById('status');
+      status.textContent = 'Submitting...';
 
       const data = {
         action: 'submitVote',
-        email: document.getElementById('email').value.trim(),
         name_optional: document.getElementById('name').value.trim(),
         discord_handle_optional: document.getElementById('discord').value.trim(),
+        email: document.getElementById('email').value.trim(),
         city: document.getElementById('city').value.trim(),
         votes_claimed: parseInt(document.getElementById('votes').value),
-        payment_method_selected: document.getElementById('paymentMethod').value,
-        ip: 'client'
+        payment_method_selected: paymentSelect.value,
+        // recaptchaToken: await grecaptcha.execute(SITE_KEY, {action: 'submit'}) // uncomment if reCAPTCHA active
       };
 
-      grecaptcha.ready(() => {
-        grecaptcha.execute('6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn', {action: 'submit'}).then(token => {
-          data.recaptchaToken = token;
-          fetch(backendUrl, {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: {'Content-Type': 'text/plain'} // This line fixes CORS
-          })
-            .then(r => r.json())
-            .then(json => {
-              if (json.error) alert(json.error);
-              else {
-                submissionId = json.submissionId;
-                localStorage.setItem('submissionId', submissionId);
-                showInvoice(data);
-              }
-            })
-            .catch(() => alert('Connection issue – try again'));
-        });
-      });
-    }
+      // Get IP for rate limiting (best effort)
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        data.ip = ipData.ip;
+      } catch (_) { data.ip = 'unknown'; }
 
-    function showInvoice(data) {
-      document.getElementById('step1').style.display = 'none';
-      document.getElementById('step2').style.display = 'block';
-      const amount = data.votes_claimed * 5;
-      document.getElementById('invoiceText').innerHTML = `Send <strong>$${amount}</strong> for <strong>${data.votes_claimed}</strong> votes to <strong>${data.city}</strong>`;
-
-      let details = '';
-      switch (data.payment_method_selected) {
-        case 'CashApp':
-          details = '$yourmomwarnedyou<br><img src="cashapp-qr.png" alt="CashApp QR">';
-          break;
-        case 'Venmo':
-          details = '@yourmomwarnedyou<br><img src="venmo-qr.png" alt="Venmo QR">';
-          break;
-        case 'SOL':
-          details = 'Contact Cali for SOL address<br><img src="sol-qr.png" alt="SOL QR">';
-          break;
-        case 'ETH':
-          details = 'Contact Cali for ETH address<br><img src="eth-qr.png" alt="ETH QR">';
-          break;
-        case 'BTC':
-          details = 'Contact Cali for BTC address<br><img src="btc-qr.png" alt="BTC QR">';
-          break;
-      }
-      document.getElementById('paymentDetails').innerHTML = details;
-    }
-
-    function showUpload() {
-      document.getElementById('step2').style.display = 'none';
-      document.getElementById('step3').style.display = 'block';
-    }
-
-    function later() {
-      document.getElementById('step2').style.display = 'none';
-      document.getElementById('thanks').style.display = 'block';
-    }
-
-    function uploadNow() {
-      const file = document.getElementById('screenshot').files[0];
-      if (!file) return alert('Select an image');
-      const reader = new FileReader();
-      reader.onload = e => {
-        const payload = {
-          action: 'uploadScreenshot',
-          submissionId: submissionId || localStorage.getItem('submissionId'),
-          imageBase64: e.target.result,
-          mimeType: file.type
-        };
-        fetch(backendUrl, {
+      try {
+        const response = await fetch(EXEC_URL, {
           method: 'POST',
-          body: JSON.stringify(payload),
-          headers: {'Content-Type': 'text/plain'} // Same fix for upload
-        })
-          .then(r => r.json())
-          .then(json => {
-            if (json.success) {
-              document.getElementById('step3').style.display = 'none';
-              document.getElementById('thanks').style.display = 'block';
-            } else alert(json.error || 'Upload failed');
-          })
-          .catch(() => alert('Connection issue – try again'));
-      };
-      reader.readAsDataURL(file);
-    }
+          mode: 'cors',
+          redirect: 'follow',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'  // Permanent CORS fix
+          },
+          body: JSON.stringify(data)
+        });
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('id')) {
-      submissionId = params.get('id');
-      localStorage.setItem('submissionId', submissionId);
-      document.getElementById('step1').style.display = 'none';
-      document.getElementById('step3').style.display = 'block';
-    }
+        const result = await response.json();
+
+        if (result.submissionId) {
+          status.innerHTML = `<p style="color:#0f0">Success! Your submission ID: <strong>${result.submissionId.substring(0,8)}</strong></p>
+                              <p>Check your email for the upload link. We'll review ASAP 💖</p>`;
+          document.getElementById('voteForm').reset();
+          paymentInfo.innerHTML = '';
+          paymentInfo.style.display = 'none';
+        } else {
+          status.innerHTML = `<p style="color:#f00">Error: ${result.error || 'Unknown'}</p>`;
+        }
+      } catch (err) {
+        status.innerHTML = `<p style="color:#f00">Network error: ${err.message}</p>`;
+      }
+    });
   </script>
 </body>
 </html>
