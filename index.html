@@ -112,15 +112,24 @@
       document.getElementById('invoiceText').innerHTML = `Send <strong>$${amount}</strong> for <strong>${data.votes_claimed}</strong> votes to <strong>${data.city}</strong>`;
 
       let details = '';
-      // <<< UPDATE THESE WITH YOUR REAL HANDLES & UPLOAD QR IMAGES TO REPO
-      switch (data.payment_method_selected) {
-        case 'CashApp': details = '$YourCashAppHandle <br><img src="cashapp-qr.png">'; break;
-        case 'Venmo': details = '@YourVenmoHandle <br><img src="venmo-qr.png">'; break;
-        case 'SOL': details = 'YourSOLAddress <br><img src="sol-qr.png">'; break;
-        case 'ETH': details = 'YourETHAddress <br><img src="eth-qr.png">'; break;
-        case 'BTC': details = 'YourBTCAddress <br><img src="btc-qr.png">'; break;
-      }
-      document.getElementById('paymentDetails').innerHTML = details;
+switch (data.payment_method_selected) {
+  case 'CashApp':
+    details = '$yourmomwarnedyou <br><img src="cashapp-qr.png" alt="CashApp QR">'; 
+    break;
+  case 'Venmo':
+    details = '@yourmomwarnedyou <br><img src="venmo-qr.png" alt="Venmo QR">'; 
+    break;
+  case 'SOL':
+    details = 'GNA2U9vAetNriGAfeziZjZruJZ1xR9ZLYFSeJJsgZDWR <br><img src="sol-qr.png" alt="SOL QR">'; 
+    break;
+  case 'ETH':
+    details = '0x016e552bdA243f69DA29b86041e911312fAFA95b <br><img src="eth-qr.png" alt="ETH QR">'; 
+    break;
+  case 'BTC':
+    details = 'bc1q7chqcjg27yv0prm9n4lqzekp5exrwdllr9p2gq <br><img src="btc-qr.png" alt="BTC QR">'; 
+    break;
+}
+document.getElementById('paymentDetails').innerHTML = details;
     }
 
     function showUpload() {
