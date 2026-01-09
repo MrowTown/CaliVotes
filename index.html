@@ -97,7 +97,7 @@
           fetch(backendUrl, {
             method: 'POST',
             body: JSON.stringify(data),
-            headers: {'Content-Type': 'text/plain'}
+            headers: {'Content-Type': 'text/plain'} // This line fixes CORS
           })
             .then(r => r.json())
             .then(json => {
@@ -164,7 +164,7 @@
         fetch(backendUrl, {
           method: 'POST',
           body: JSON.stringify(payload),
-          headers: {'Content-Type': 'text/plain'}
+          headers: {'Content-Type': 'text/plain'} // Same fix for upload
         })
           .then(r => r.json())
           .then(json => {
