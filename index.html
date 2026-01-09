@@ -97,12 +97,18 @@
           fetch(backendUrl, {method: 'POST', body: JSON.stringify(data)})
             .then(r => r.json())
             .then(json => {
-              if (json.error) return alert(json.error);
+              if (json.error) {
+                alert(json.error);
+                return;
+              }
               submissionId = json.submissionId;
               localStorage.setItem('submissionId', submissionId);
               showInvoice(data);
             })
-            .catch(() => alert('Connection issue – try again'));
+            .catch(err => {
+              console.error(err);
+              alert('Connection issue – try again');
+            });
         });
       });
     }
