@@ -1,2 +1,169 @@
 <!DOCTYPE html>
-<html><body><h1>Cali Reign Tour Vote Coming Soon!</h1></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vote for Cali Reign's Tour!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://www.google.com/recaptcha/api.js?render=6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn"></script>
+  <script src="https://cdn.jsdelivr.net/npm/uuid@9.0.1/dist/umd/uuidv4.min.js"></script>
+  <style>
+    body { background:#C8A2C8; color:#000; font-family:'Poppins',sans-serif; padding:20px; text-align:center; }
+    h1 { color:#FF69B4; }
+    input, select, button { 
+      background:#FF69B4; color:#000; border:none; border-radius:8px; padding:12px; margin:8px 0; width:90%; max-width:400px; font-size:16px; 
+    }
+    button { background:#00FFFF; cursor:pointer; font-weight:bold; }
+    #step1 { display:block; }
+    #step2, #step3, #thanks { display:none; }
+    .honeypot { display:none; }
+    #paymentDetails img { max-width:300px; margin:20px 0; }
+  </style>
+</head>
+<body>
+  <h1>Vote for Cali's Tour City!</h1>
+
+  <div id="step1">
+    <input type="email" id="email" placeholder="Email (required)" required>
+    <input type="text" id="name" placeholder="Name (optional)">
+    <input type="text" id="discord" placeholder="Discord (optional)">
+    <input type="text" id="city" list="cities" placeholder="City (type or select)" required>
+    <datalist id="cities"></datalist>
+    <input type="number" id="votes" min="1" max="1000" placeholder="Number of votes ($5 each)" required>
+    <select id="paymentMethod" required>
+      <option value="">Choose payment method</option>
+      <option value="CashApp">CashApp</option>
+      <option value="Venmo">Venmo</option>
+      <option value="SOL">SOL (Crypto)</option>
+      <option value="ETH">ETH (Crypto)</option>
+      <option value="BTC">BTC (Crypto)</option>
+    </select>
+    <input class="honeypot" type="text" id="hp" tabindex="-1" autocomplete="off">
+    <button onclick="submitDeclaration()">Submit Vote</button>
+  </div>
+
+  <div id="step2">
+    <p id="invoiceText"></p>
+    <div id="paymentDetails"></div>
+    <p><a href="mailto:calireign@protonmail.com">Contact Cali for other crypto</a></p>
+    <button onclick="showUpload()">I Paid – Upload Proof Now</button>
+    <button onclick="later()">I'll upload later (check email)</button>
+  </div>
+
+  <div id="step3">
+    <p>Upload your payment screenshot:</p>
+    <input type="file" id="screenshot" accept="image/*" required>
+    <button onclick="uploadNow()">Upload</button>
+  </div>
+
+  <div id="thanks">
+    <h2>Thanks! Waiting for Cali to approve 💖</h2>
+    <p>Your votes will appear on the leaderboard once verified.</p>
+    <p><a href="leaderboard.html">View Leaderboard</a></p>
+  </div>
+
+  <script>
+    const backendUrl = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLgflmxt_Ud6JVMb2nglWJbDTDjBdF4kGsxtSizlWHUEEnsX9zX4B4ASSNbH-9UbhBSd2fMfKVJbvZ9J-2PFAKOXu0CXTq_wEL9f9pMC7-HSWHcDdQpN20bEjSenZmGurDvD3WjQiGOUl5D4XvZmuYfZbqeth_u0ErYPukVZ76FNHIa0HYnrt8mw_CdyW07k7x8nen7Z5DKk1GohLbSeJ9_XVA3WD4rZDOOdz97IWzJb_fosc1qSXAmBkamkVmpJY2Kdxbn4sqsBFK6-18RU7NaB5zuHkKQs6zQ7CB5F&lib=MEJTvWFwTl1rqXGbOmPpEcGyOIN4IFzPR'; // <<< REPLACE WITH YOUR /exec URL
+
+    const cities = ["Albuquerque, New Mexico","Anaheim, California","Anchorage, Alaska","Arlington, Texas","Arlington, Virginia","Atlanta, Georgia","Aurora, Colorado","Austin, Texas","Bakersfield, California","Baltimore, Maryland","Boise, Idaho","Boston, Massachusetts","Buffalo, New York","Cape Coral, Florida","Chandler, Arizona","Charlotte, North Carolina","Chesapeake, Virginia","Chicago, Illinois","Chula Vista, California","Cincinnati, Ohio","Cleveland, Ohio","Colorado Springs, Colorado","Columbus, Ohio","Corpus Christi, Texas","Dallas, Texas","Denver, Colorado","Detroit, Michigan","Durham, North Carolina","El Paso, Texas","Enterprise, Nevada","Fort Wayne, Indiana","Fort Worth, Texas","Fresno, California","Frisco, Texas","Garland, Texas","Gilbert, Arizona","Glendale, Arizona","Greensboro, North Carolina","Henderson, Nevada","Honolulu, Hawaii","Houston, Texas","Indianapolis, Indiana","Irvine, California","Irving, Texas","Jacksonville, Florida","Jersey City, New Jersey","Kansas City, Missouri","Laredo, Texas","Las Vegas, Nevada","Lexington, Kentucky","Lincoln, Nebraska","Long Beach, California","Los Angeles, California","Louisville, Kentucky","Lubbock, Texas","Madison, Wisconsin","Memphis, Tennessee","Mesa, Arizona","Miami, Florida","Milwaukee, Wisconsin","Minneapolis, Minnesota","Nashville, Tennessee","New Orleans, Louisiana","New York City, New York","Newark, New Jersey","North Las Vegas, Nevada","Oakland, California","Oklahoma City, Oklahoma","Omaha, Nebraska","Orlando, Florida","Philadelphia, Pennsylvania","Phoenix, Arizona","Pittsburgh, Pennsylvania","Plano, Texas","Port St. Lucie, Florida","Portland, Oregon","Raleigh, North Carolina","Reno, Nevada","Richmond, Virginia","Riverside, California","Sacramento, California","San Antonio, Texas","San Diego, California","San Francisco, California","San Jose, California","Santa Ana, California","Scottsdale, Arizona","Seattle, Washington","St. Louis, Missouri","St. Paul, Minnesota","St. Petersburg, Florida","Stockton, California","Tampa, Florida","Toledo, Ohio","Tucson, Arizona","Tulsa, Oklahoma","Virginia Beach, Virginia","Washington, D.C., District of Columbia","Wichita, Kansas","Winston-Salem, North Carolina"];
+    const datalist = document.getElementById('cities');
+    cities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      datalist.appendChild(opt);
+    });
+
+    let submissionId = null;
+
+    function submitDeclaration() {
+      if (document.getElementById('hp').value) return;
+
+      const data = {
+        action: 'submitVote',
+        email: document.getElementById('email').value.trim(),
+        name_optional: document.getElementById('name').value.trim(),
+        discord_handle_optional: document.getElementById('discord').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        votes_claimed: parseInt(document.getElementById('votes').value),
+        payment_method_selected: document.getElementById('paymentMethod').value,
+        ip: 'client'
+      };
+
+      grecaptcha.ready(() => {
+        grecaptcha.execute('6LcJBEUsAAAAAE9HpIiE1XL0g5hQbo0A4sfaPMzn', {action: 'submit'}).then(token => {
+          data.recaptchaToken = token;
+          fetch(backendUrl, {method: 'POST', body: JSON.stringify(data)})
+            .then(r => r.json())
+            .then(json => {
+              if (json.error) return alert(json.error);
+              submissionId = json.submissionId;
+              localStorage.setItem('submissionId', submissionId);
+              showInvoice(data);
+            })
+            .catch(() => alert('Connection issue – try again'));
+        });
+      });
+    }
+
+    function showInvoice(data) {
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
+      const amount = data.votes_claimed * 5;
+      document.getElementById('invoiceText').innerHTML = `Send <strong>$${amount}</strong> for <strong>${data.votes_claimed}</strong> votes to <strong>${data.city}</strong>`;
+
+      let details = '';
+      // <<< UPDATE THESE WITH YOUR REAL HANDLES & UPLOAD QR IMAGES TO REPO
+      switch (data.payment_method_selected) {
+        case 'CashApp': details = '$YourCashAppHandle <br><img src="cashapp-qr.png">'; break;
+        case 'Venmo': details = '@YourVenmoHandle <br><img src="venmo-qr.png">'; break;
+        case 'SOL': details = 'YourSOLAddress <br><img src="sol-qr.png">'; break;
+        case 'ETH': details = 'YourETHAddress <br><img src="eth-qr.png">'; break;
+        case 'BTC': details = 'YourBTCAddress <br><img src="btc-qr.png">'; break;
+      }
+      document.getElementById('paymentDetails').innerHTML = details;
+    }
+
+    function showUpload() {
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step3').style.display = 'block';
+    }
+
+    function later() {
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('thanks').style.display = 'block';
+    }
+
+    function uploadNow() {
+      const file = document.getElementById('screenshot').files[0];
+      if (!file) return alert('Select an image');
+      const reader = new FileReader();
+      reader.onload = e => {
+        const payload = {
+          action: 'uploadScreenshot',
+          submissionId: submissionId || localStorage.getItem('submissionId'),
+          imageBase64: e.target.result,
+          mimeType: file.type
+        };
+        fetch(backendUrl, {method: 'POST', body: JSON.stringify(payload)})
+          .then(r => r.json())
+          .then(json => {
+            if (json.success) {
+              document.getElementById('step3').style.display = 'none';
+              document.getElementById('thanks').style.display = 'block';
+            } else alert(json.error || 'Upload failed');
+          });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Magic link support
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('id')) {
+      submissionId = params.get('id');
+      localStorage.setItem('submissionId', submissionId);
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step3').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
