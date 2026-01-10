@@ -37,6 +37,15 @@
       <h1>Upload payment screenshot</h1>
       <p>Use the link from your email. If your link is expired, submit a new vote claim to get a fresh upload link.</p>
 
+      <div class="card" style="background:rgba(255,255,255,.02);margin-bottom:12px;">
+        <div class="small" style="margin-bottom:6px;">Have a token? Paste it to continue.</div>
+        <div class="row">
+          <input id="tokenInput" type="text" placeholder="Paste upload token" />
+          <button id="applyToken" type="button">Use token</button>
+        </div>
+        <div class="small" id="savedToken" style="margin-top:8px;"></div>
+      </div>
+
       <div class="drop" id="drop">
         <div style="font-weight:800;margin-bottom:6px;">Drag & drop an image here</div>
         <div class="small">…or choose a file:</div>
@@ -52,6 +61,10 @@
       <div id="ok" class="msg ok"></div>
       <div id="err" class="msg err"></div>
 
+      <div class="row" style="margin-top:12px;">
+        <a href="landing.html" class="small" style="color:#7bd3ff">Back to landing</a>
+      </div>
+
       <div class="small" style="margin-top:12px;opacity:.85">
         If you have trouble uploading, email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
       </div>
@@ -62,23 +75,50 @@
     // CHANGE THIS ONE LINE ONLY
     const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
 
+    const SUBMISSION_KEY = "caliVotesSubmission";
+
     const $ = (id) => document.getElementById(id);
     const ok = $("ok"), err = $("err");
     const uploadBtn = $("uploadBtn");
     const fileInput = $("file");
     const preview = $("preview");
     const tokenText = $("tokenText");
+    const tokenInput = $("tokenInput");
+    const savedToken = $("savedToken");
 
     function show(el, html){
       ok.style.display="none"; err.style.display="none";
       el.innerHTML = html;
-      el.style.display="block";
+      el.style.display = "block";
     }
 
-    const token = new URLSearchParams(location.search).get("token") || "";
-    tokenText.textContent = token || "—";
+    function loadSubmission(){
+      try { return JSON.parse(localStorage.getItem(SUBMISSION_KEY) || "{}"); }
+      catch { return {}; }
+    }
 
+    function resolveToken(){
+      return new URLSearchParams(location.search).get("token") || "";
+    }
+
+    function updateTokenDisplay(token){
+      tokenText.textContent = token || "—";
+      uploadBtn.disabled = !token || !base64Image;
+    }
+
+    let token = resolveToken();
     let base64Image = "";
+    updateTokenDisplay(token);
+
+    const submission = loadSubmission();
+    const fallbackToken = submission.upload_token || "";
+    if (fallbackToken && !token) {
+      savedToken.innerHTML = `Saved token found. <button id=\"useSaved\" type=\"button\">Use saved token</button>`;
+      document.getElementById("useSaved").addEventListener("click", () => {
+        token = fallbackToken;
+        updateTokenDisplay(token);
+      });
+    }
 
     function readFileAsDataURL(file){
       return new Promise((resolve, reject) => {
@@ -120,6 +160,15 @@
       drop.style.borderColor = "rgba(255,255,255,.18)";
       try { await handleFile(e.dataTransfer.files[0]); }
       catch (er){ show(err, `<b>Error:</b> ${String(er)}`); }
+    });
+
+    $("applyToken").addEventListener("click", () => {
+      const entered = tokenInput.value.trim();
+      if (!entered) {
+        return show(err, `<b>Error:</b> Paste your upload token first.`);
+      }
+      token = entered;
+      updateTokenDisplay(token);
     });
 
     uploadBtn.addEventListener("click", async () => {

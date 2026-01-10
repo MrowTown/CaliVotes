@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Tour Vote</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:860px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .grid{display:grid;gap:12px}
+    @media(min-width:700px){.two{grid-template-columns:1fr 1fr;}}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;text-decoration:none;display:inline-block;text-align:center;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    input{width:100%;border-radius:14px;border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px;}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--stroke);color:var(--muted);}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;}
+    .ok{border-color:rgba(0,255,176,.25);background:rgba(0,255,176,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h1>Cali Reign — Tour Vote</h1>
+        <span class="badge">$5 = 1 vote</span>
+      </div>
+      <p>Start by registering your email, verify your code, set your vote count, then pay and upload your screenshot.</p>
+
+      <div class="grid two">
+        <div class="card" style="background:rgba(255,255,255,.02);">
+          <h2 style="margin:0 0 8px;font-size:18px;">New voter</h2>
+          <p>Register, verify, and set up your votes.</p>
+          <a class="btn" href="register.html">Start registration</a>
+          <div class="small" style="margin-top:8px;">Already verified? Continue to <a href="vote.html" style="color:#7bd3ff">vote setup</a>.</div>
+        </div>
+        <div class="card" style="background:rgba(255,255,255,.02);">
+          <h2 style="margin:0 0 8px;font-size:18px;">Already paid? Upload proof</h2>
+          <p>Have your upload token from email? Paste it here to jump to upload.</p>
+          <label for="token">Upload token</label>
+          <input id="token" type="text" placeholder="Paste your token" />
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="goUpload" type="button">Go to upload</button>
+            <a class="btn secondary" href="upload.html">Open upload page</a>
+          </div>
+          <div class="small" style="margin-top:8px;">Need a new token? Start with <a href="register.html" style="color:#7bd3ff">registration</a>.</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid two">
+        <div>
+          <h3 style="margin:0 0 6px;font-size:16px;">Where you are now</h3>
+          <div class="small" id="statusLine">Checking your saved progress…</div>
+        </div>
+        <div class="small">
+          Need another crypto? Email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+        </div>
+      </div>
+
+      <div id="ok" class="msg ok"></div>
+    </div>
+  </div>
+
+  <script>
+    const tokenInput = document.getElementById("token");
+    const statusLine = document.getElementById("statusLine");
+    const ok = document.getElementById("ok");
+
+    function show(el, html){
+      el.innerHTML = html;
+      el.style.display = "block";
+    }
+
+    document.getElementById("goUpload").addEventListener("click", () => {
+      const token = tokenInput.value.trim();
+      if (token) {
+        window.location.href = `upload.html?token=${encodeURIComponent(token)}`;
+      } else {
+        show(ok, "Add your upload token to continue.");
+      }
+    });
+
+    function loadState(){
+      try {
+        return JSON.parse(localStorage.getItem("caliVotesProfile") || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    const profile = loadState();
+    if (profile.email) {
+      const status = profile.verified ? "Verified" : "Not verified";
+      statusLine.innerHTML = `${status} for <b>${profile.email}</b>.`;
+    } else {
+      statusLine.textContent = "No registration on this device yet.";
+    }
+  </script>
+</body>
+</html>

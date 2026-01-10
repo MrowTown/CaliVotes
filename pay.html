@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Payment</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;}
+    .err{border-color:rgba(255,36,90,.25);background:rgba(255,36,90,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .qrWrap{margin-top:12px;border:1px solid var(--stroke);border-radius:16px;padding:12px;background:rgba(255,255,255,.03)}
+    .qrWrap img{max-width:280px;width:100%;border-radius:14px;border:1px solid var(--stroke);display:block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Payment & invoice</h1>
+      <p>Send your payment, then continue to upload your screenshot.</p>
+
+      <div id="alert" class="msg err"></div>
+
+      <div class="row">
+        <div>
+          <div class="small">Amount due</div>
+          <div style="font-size:22px;font-weight:800" id="amount">$0</div>
+        </div>
+        <div>
+          <div class="small">Payment method</div>
+          <div style="font-size:18px;font-weight:700" id="method">—</div>
+        </div>
+      </div>
+
+      <div id="qrWrap" class="qrWrap" style="display:none;">
+        <div class="small" style="margin-bottom:8px;">Scan to pay:</div>
+        <img id="qrImg" alt="Payment QR" />
+        <div class="small" style="margin-top:8px;opacity:.9">Once paid, continue to upload your screenshot.</div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <button id="continueBtn" class="btn" type="button">Continue to Upload Proof</button>
+        <a class="btn secondary" href="vote.html">Back to vote setup</a>
+        <a class="btn secondary" href="landing.html">Landing</a>
+      </div>
+
+      <div class="small" style="margin-top:12px;opacity:.85">
+        Need another crypto? Email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUBMISSION_KEY = "caliVotesSubmission";
+
+    const qrMap = {
+      "CashApp": "cashapp-qr.png",
+      "Venmo": "venmo-qr.png",
+      "SOL": "sol-qr.png",
+      "ETH": "eth-qr.png",
+      "BTC": "btc-qr.png"
+    };
+
+    const amountEl = document.getElementById("amount");
+    const methodEl = document.getElementById("method");
+    const alertBox = document.getElementById("alert");
+    const qrWrap = document.getElementById("qrWrap");
+    const qrImg = document.getElementById("qrImg");
+
+    function loadSubmission(){
+      try { return JSON.parse(localStorage.getItem(SUBMISSION_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    const submission = loadSubmission();
+    if (!submission.votes) {
+      alertBox.style.display = "block";
+      alertBox.innerHTML = "<b>Missing vote setup.</b> Please complete vote setup first. <a href=\"vote.html\" style=\"color:#7bd3ff\">Go back</a>.";
+    }
+
+    const amount = submission.amount_due || (submission.votes ? submission.votes * 5 : 0);
+    amountEl.textContent = `$${amount}`;
+    methodEl.textContent = submission.payment_method || "—";
+
+    const qrFile = qrMap[submission.payment_method];
+    if (qrFile) {
+      qrImg.src = qrFile;
+      qrWrap.style.display = "block";
+    }
+
+    document.getElementById("continueBtn").addEventListener("click", () => {
+      if (submission.upload_url) {
+        window.location.href = submission.upload_url;
+        return;
+      }
+      if (submission.upload_token) {
+        window.location.href = `upload.html?token=${encodeURIComponent(submission.upload_token)}`;
+        return;
+      }
+      window.location.href = "upload.html";
+    });
+  </script>
+</body>
+</html>

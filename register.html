@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Register</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;}
+    input{width:100%;border-radius:14px;border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px;}
+    .grid{display:grid;gap:12px}
+    @media(min-width:700px){.two{grid-template-columns:1fr 1fr;}}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;overflow:auto;}
+    .ok{border-color:rgba(0,255,176,.25);background:rgba(0,255,176,.10)}
+    .err{border-color:rgba(255,36,90,.25);background:rgba(255,36,90,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Register your email</h1>
+      <p>We’ll send a verification code to confirm your vote.</p>
+
+      <form id="registerForm" class="grid">
+        <div class="grid two">
+          <div>
+            <label>Email (required)</label>
+            <input id="email" type="email" required placeholder="you@example.com" />
+          </div>
+          <div>
+            <label>City (required)</label>
+            <input id="city" type="text" required placeholder="e.g. Atlanta" />
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div>
+            <label>Name (optional)</label>
+            <input id="name" type="text" placeholder="First name or nickname" />
+          </div>
+          <div>
+            <label>Discord (optional)</label>
+            <input id="discord" type="text" placeholder="@name or name#1234" />
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="requestBtn" class="btn" type="submit">Send verification code</button>
+          <a class="btn secondary" href="landing.html">Back to landing</a>
+        </div>
+
+        <div id="ok" class="msg ok"></div>
+        <div id="err" class="msg err"></div>
+      </form>
+
+      <div class="divider"></div>
+
+      <h2 style="margin:0 0 6px;font-size:18px;">Enter your verification code</h2>
+      <p class="small">Already received a code? Verify it below.</p>
+
+      <form id="verifyForm" class="grid">
+        <div>
+          <label>Verification code</label>
+          <input id="code" type="text" placeholder="6-digit code" required />
+        </div>
+        <div class="row">
+          <button id="verifyBtn" class="btn" type="submit">Verify email</button>
+          <span id="verifyStatus" class="small"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // CHANGE THIS ONE LINE ONLY
+    const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
+
+    const STORAGE_KEY = "caliVotesProfile";
+
+    const $ = (id) => document.getElementById(id);
+    const ok = $("ok"), err = $("err");
+    const requestBtn = $("requestBtn");
+    const verifyBtn = $("verifyBtn");
+    const verifyStatus = $("verifyStatus");
+
+    function show(el, html){
+      ok.style.display="none"; err.style.display="none";
+      el.innerHTML = html;
+      el.style.display = "block";
+    }
+
+    function loadProfile(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    function saveProfile(update){
+      const next = { ...loadProfile(), ...update };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    }
+
+    async function post(action, payload){
+      const res = await fetch(EXEC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload })
+      });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return { error: text }; }
+    }
+
+    const existing = loadProfile();
+    if (existing.email) $("email").value = existing.email;
+    if (existing.city) $("city").value = existing.city;
+    if (existing.name) $("name").value = existing.name;
+    if (existing.discord) $("discord").value = existing.discord;
+
+    $("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      ok.style.display="none"; err.style.display="none";
+
+      if (!EXEC_URL || EXEC_URL.includes("PASTE_YOUR")) {
+        return show(err, `<b>Error:</b> Paste your Apps Script <code>/exec</code> URL into <code>EXEC_URL</code>.`);
+      }
+
+      requestBtn.disabled = true;
+
+      const payload = {
+        email: $("email").value.trim(),
+        city: $("city").value.trim(),
+        name_optional: $("name").value.trim(),
+        discord_handle_optional: $("discord").value.trim()
+      };
+
+      const res = await post("requestEmailCode", payload);
+      requestBtn.disabled = false;
+
+      if (res.error) {
+        return show(err, `<b>Error:</b><br><pre style="white-space:pre-wrap;margin:0">${res.error}</pre>`);
+      }
+
+      saveProfile({
+        email: payload.email,
+        city: payload.city,
+        name: payload.name_optional,
+        discord: payload.discord_handle_optional,
+        verified: false
+      });
+
+      show(ok, `<b>Check your email.</b> Enter the verification code below.`);
+    });
+
+    $("verifyForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      ok.style.display="none"; err.style.display="none";
+
+      const profile = loadProfile();
+      if (!profile.email) {
+        return show(err, `<b>Error:</b> Enter your email above first.`);
+      }
+
+      verifyBtn.disabled = true;
+      verifyStatus.textContent = "Verifying…";
+
+      const res = await post("verifyEmailCode", {
+        email: profile.email,
+        code: $("code").value.trim()
+      });
+
+      verifyBtn.disabled = false;
+      verifyStatus.textContent = "";
+
+      if (res.error) {
+        return show(err, `<b>Error:</b><br><pre style="white-space:pre-wrap;margin:0">${res.error}</pre>`);
+      }
+
+      const sessionToken = res.session_token || res.token || res.verification_token || "";
+      saveProfile({ verified: true, session_token: sessionToken });
+
+      show(ok, `<b>Verified.</b> Sending you to vote setup…`);
+      setTimeout(() => {
+        window.location.href = "vote.html";
+      }, 600);
+    });
+  </script>
+</body>
+</html>
