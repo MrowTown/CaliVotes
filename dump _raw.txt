@@ -1,0 +1,1005 @@
+Skip to content
+Navigation Menu
+MrowTown
+CaliVotes
+
+Type / to search
+Code
+Issues
+Pull requests
+2
+Actions
+Projects
+Security
+Insights
+Settings
+Comparing changes
+Choose two branches to see what’s changed or to start a new pull request. If you need to, you can also  or learn more about diff comparisons.
+...
+ Can’t automatically merge. Don’t worry, you can still create the pull request.
+ Split frontend into multi-page flow (landing/register/vote/pay/upload) with email verification and token upload #2
+Motivation Replace the single-page UI with a clearer multi-step flow for registration, verification, payment and proof upload to improve UX and recovery paths. Add an email verification step so submis
+ 1 commit
+ 7 files changed
+ 1 contributor
+Commits on Jan 9, 2026
+Add multi-page vote flow
+
+@MrowTown
+MrowTown committed 4 minutes ago
+ Showing  with 684 additions and 199 deletions.
+ 20 changes: 20 additions & 0 deletions20  
+embed.md
+Original file line number	Diff line number	Diff line change
+@@ -0,0 +1,20 @@
+# Cali Reign voting embed
+
+Use `landing.html` as the primary entry point for the multi-step flow.
+
+## Recommended iframe
+
+```html
+<iframe
+  src="https://YOUR_DOMAIN/landing.html"
+  width="100%"
+  height="920"
+  style="border:0"
+  allow="clipboard-write"
+></iframe>
+```
+
+## Direct links
+
+- Registration flow: `landing.html`
+- Upload proof: `upload.html?token=YOUR_TOKEN`
+  204 changes: 8 additions & 196 deletions204  
+index.html
+Original file line number	Diff line number	Diff line change
+@@ -3,207 +3,19 @@
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="refresh" content="0; url=landing.html" />
+  <title>Cali Reign — Tour Vote</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;}
+    input,select{width:100%;border-radius:14px;border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px;}
+    .grid{display:grid;gap:12px}
+    @media(min-width:700px){.two{grid-template-columns:1fr 1fr;}}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;overflow:auto;}
+    .ok{border-color:rgba(0,255,176,.25);background:rgba(0,255,176,.10)}
+    .err{border-color:rgba(255,36,90,.25);background:rgba(255,36,90,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+    .qrWrap{display:none;margin-top:10px;border:1px solid var(--stroke);border-radius:16px;padding:12px;background:rgba(255,255,255,.03)}
+    .qrWrap img{max-width:280px;width:100%;border-radius:14px;border:1px solid var(--stroke);display:block}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    :root{--bg:#0b0b0f;--txt:#fff;--muted:rgba(255,255,255,.70);}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}
+    a{color:#7bd3ff;}
+    .small{font-size:14px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Cali Reign — Tour Vote</h1>
+      <p>$5 = 1 vote. Submit your claim, pay, then upload your screenshot. (We’ll email you the upload link too — but you can do it immediately.)</p>
+
+      <form id="voteForm" class="grid">
+        <div class="grid two">
+          <div>
+            <label>Email (required)</label>
+            <input id="email" type="email" required placeholder="you@example.com" />
+          </div>
+          <div>
+            <label>City (required)</label>
+            <input id="city" type="text" required placeholder="e.g. Atlanta" />
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div>
+            <label>Votes claimed</label>
+            <input id="votes" type="number" min="1" max="1000" step="1" value="1" required />
+            <div class="small" id="amountLine" style="margin-top:6px;">Amount due: $5</div>
+          </div>
+          <div>
+            <label>Payment method</label>
+            <select id="payment">
+              <option value="">Select…</option>
+              <option value="CashApp">CashApp</option>
+              <option value="Venmo">Venmo</option>
+              <option value="SOL">SOL</option>
+              <option value="ETH">ETH</option>
+              <option value="BTC">BTC</option>
+              <option value="Other">Other</option>
+            </select>
+
+            <div id="qrWrap" class="qrWrap">
+              <div class="small" style="margin-bottom:8px;">Scan to pay:</div>
+              <img id="qrImg" alt="Payment QR" />
+              <div class="small" style="margin-top:8px;opacity:.9">Then you’ll upload your screenshot on the next screen.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div>
+            <label>Name (optional)</label>
+            <input id="name" type="text" placeholder="First name or nickname" />
+          </div>
+          <div>
+            <label>Discord (optional)</label>
+            <input id="discord" type="text" placeholder="@name or name#1234" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <button id="submitBtn" class="btn" type="submit">Continue</button>
+          <button id="leaderBtn" class="btn secondary" type="button">View leaderboard</button>
+          <span class="small" id="statusLine"></span>
+        </div>
+
+        <div id="ok" class="msg ok"></div>
+        <div id="err" class="msg err"></div>
+      </form>
+
+      <div class="small" style="margin-top:12px;opacity:.85">
+        Need another crypto? Email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+      </div>
+    </div>
+  <div>
+    <h1 style="margin:0 0 8px;">Redirecting…</h1>
+    <p class="small">If you are not redirected, <a href="landing.html">open the landing page</a>.</p>
+  </div>
+
+  <script>
+    // CHANGE THIS ONE LINE ONLY
+    const _URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
+
+    const LEADERBOARD_URL = EXEC_URL + "?page=leaderboard";
+
+    const qrMap = {
+      "CashApp": "cashapp-qr.png",
+      "Venmo": "venmo-qr.png",
+      "SOL": "sol-qr.png",
+      "ETH": "eth-qr.png",
+      "BTC": "btc-qr.png"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const ok = $("ok"), err = $("err");
+    const submitBtn = $("submitBtn");
+    const statusLine = $("statusLine");
+    const amountLine = $("amountLine");
+    const qrWrap = $("qrWrap");
+    const qrImg = $("qrImg");
+
+    function show(el, html){
+      ok.style.display="none"; err.style.display="none";
+      el.innerHTML = html;
+      el.style.display="block";
+    }
+
+    function esc(s){
+      return String(s ?? "").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    async function post(action, payload){
+      const res = await fetch(EXEC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload })
+      });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return { error: text }; }
+    }
+
+    $("votes").addEventListener("input", () => {
+      const v = Math.max(1, Math.min(1000, parseInt($("votes").value || "1", 10)));
+      $("votes").value = v;
+      amountLine.textContent = "Amount due: $" + (v * 5);
+    });
+
+    $("payment").addEventListener("change", () => {
+      const pm = $("payment").value;
+      const file = qrMap[pm];
+      if (file) {
+        qrImg.src = file;          // expects png in repo root
+        qrWrap.style.display = "block";
+      } else {
+        qrWrap.style.display = "none";
+        qrImg.src = "";
+      }
+    });
+
+    $("leaderBtn").addEventListener("click", () => window.open(LEADERBOARD_URL, "_blank", "noopener"));
+
+    $("voteForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      ok.style.display="none"; err.style.display="none";
+
+      if (!EXEC_URL || EXEC_URL.includes("PASTE_YOUR")) {
+        return show(err, `<b>Error:</b> Paste your Apps Script <code>/exec</code> URL into <code>EXEC_URL</code>.`);
+      }
+
+      submitBtn.disabled = true;
+      statusLine.textContent = "Submitting…";
+
+      const payload = {
+        email: $("email").value.trim(),
+        city: $("city").value.trim(),
+        votes_claimed: parseInt($("votes").value || "1", 10),
+        payment_method_selected: $("payment").value,
+        name_optional: $("name").value.trim(),
+        discord_handle_optional: $("discord").value.trim()
+      };
+
+      const res = await post("submitVote", payload);
+
+      submitBtn.disabled = false;
+      statusLine.textContent = "";
+
+      if (res.error) {
+        return show(err, `<b>Error:</b><br><pre style="white-space:pre-wrap;margin:0">${esc(res.error)}</pre>`);
+      }
+
+      // Momentum: send them straight to upload, email still goes out as backup
+      if (res.upload_url) {
+        window.location.href = res.upload_url;
+        return;
+      }
+
+      show(ok, `<b>Submitted.</b> Check your email for the upload link.`);
+    });
+  </script>
+</body>
+</html>
+ 110 changes: 110 additions & 0 deletions110  
+landing.html
+Original file line number	Diff line number	Diff line change
+@@ -0,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Tour Vote</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:860px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .grid{display:grid;gap:12px}
+    @media(min-width:700px){.two{grid-template-columns:1fr 1fr;}}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;text-decoration:none;display:inline-block;text-align:center;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    input{width:100%;border-radius:14px;border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px;}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--stroke);color:var(--muted);}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;}
+    .ok{border-color:rgba(0,255,176,.25);background:rgba(0,255,176,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h1>Cali Reign — Tour Vote</h1>
+        <span class="badge">$5 = 1 vote</span>
+      </div>
+      <p>Start by registering your email, verify your code, set your vote count, then pay and upload your screenshot.</p>
+
+      <div class="grid two">
+        <div class="card" style="background:rgba(255,255,255,.02);">
+          <h2 style="margin:0 0 8px;font-size:18px;">New voter</h2>
+          <p>Register, verify, and set up your votes.</p>
+          <a class="btn" href="register.html">Start registration</a>
+          <div class="small" style="margin-top:8px;">Already verified? Continue to <a href="vote.html" style="color:#7bd3ff">vote setup</a>.</div>
+        </div>
+        <div class="card" style="background:rgba(255,255,255,.02);">
+          <h2 style="margin:0 0 8px;font-size:18px;">Already paid? Upload proof</h2>
+          <p>Have your upload token from email? Paste it here to jump to upload.</p>
+          <label for="token">Upload token</label>
+          <input id="token" type="text" placeholder="Paste your token" />
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="goUpload" type="button">Go to upload</button>
+            <a class="btn secondary" href="upload.html">Open upload page</a>
+          </div>
+          <div class="small" style="margin-top:8px;">Need a new token? Start with <a href="register.html" style="color:#7bd3ff">registration</a>.</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid two">
+        <div>
+          <h3 style="margin:0 0 6px;font-size:16px;">Where you are now</h3>
+          <div class="small" id="statusLine">Checking your saved progress…</div>
+        </div>
+        <div class="small">
+          Need another crypto? Email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+        </div>
+      </div>
+
+      <div id="ok" class="msg ok"></div>
+    </div>
+  </div>
+
+  <script>
+    const tokenInput = document.getElementById("token");
+    const statusLine = document.getElementById("statusLine");
+    const ok = document.getElementById("ok");
+
+    function show(el, html){
+      el.innerHTML = html;
+      el.style.display = "block";
+    }
+
+    document.getElementById("goUpload").addEventListener("click", () => {
+      const token = tokenInput.value.trim();
+      if (token) {
+        window.location.href = `upload.html?token=${encodeURIComponent(token)}`;
+      } else {
+        show(ok, "Add your upload token to continue.");
+      }
+    });
+
+    function loadState(){
+      try {
+        return JSON.parse(localStorage.getItem("caliVotesProfile") || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    const profile = loadState();
+    if (profile.email) {
+      const status = profile.verified ? "Verified" : "Not verified";
+      statusLine.innerHTML = `${status} for <b>${profile.email}</b>.`;
+    } else {
+      statusLine.textContent = "No registration on this device yet.";
+    }
+  </script>
+</body>
+</html>
+ 114 changes: 114 additions & 0 deletions114  
+pay.html
+Original file line number	Diff line number	Diff line change
+@@ -0,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Payment</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;}
+    .err{border-color:rgba(255,36,90,.25);background:rgba(255,36,90,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .qrWrap{margin-top:12px;border:1px solid var(--stroke);border-radius:16px;padding:12px;background:rgba(255,255,255,.03)}
+    .qrWrap img{max-width:280px;width:100%;border-radius:14px;border:1px solid var(--stroke);display:block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Payment & invoice</h1>
+      <p>Send your payment, then continue to upload your screenshot.</p>
+
+      <div id="alert" class="msg err"></div>
+
+      <div class="row">
+        <div>
+          <div class="small">Amount due</div>
+          <div style="font-size:22px;font-weight:800" id="amount">$0</div>
+        </div>
+        <div>
+          <div class="small">Payment method</div>
+          <div style="font-size:18px;font-weight:700" id="method">—</div>
+        </div>
+      </div>
+
+      <div id="qrWrap" class="qrWrap" style="display:none;">
+        <div class="small" style="margin-bottom:8px;">Scan to pay:</div>
+        <img id="qrImg" alt="Payment QR" />
+        <div class="small" style="margin-top:8px;opacity:.9">Once paid, continue to upload your screenshot.</div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <button id="continueBtn" class="btn" type="button">Continue to Upload Proof</button>
+        <a class="btn secondary" href="vote.html">Back to vote setup</a>
+        <a class="btn secondary" href="landing.html">Landing</a>
+      </div>
+
+      <div class="small" style="margin-top:12px;opacity:.85">
+        Need another crypto? Email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUBMISSION_KEY = "caliVotesSubmission";
+
+    const qrMap = {
+      "CashApp": "cashapp-qr.png",
+      "Venmo": "venmo-qr.png",
+      "SOL": "sol-qr.png",
+      "ETH": "eth-qr.png",
+      "BTC": "btc-qr.png"
+    };
+
+    const amountEl = document.getElementById("amount");
+    const methodEl = document.getElementById("method");
+    const alertBox = document.getElementById("alert");
+    const qrWrap = document.getElementById("qrWrap");
+    const qrImg = document.getElementById("qrImg");
+
+    function loadSubmission(){
+      try { return JSON.parse(localStorage.getItem(SUBMISSION_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    const submission = loadSubmission();
+    if (!submission.votes) {
+      alertBox.style.display = "block";
+      alertBox.innerHTML = "<b>Missing vote setup.</b> Please complete vote setup first. <a href=\"vote.html\" style=\"color:#7bd3ff\">Go back</a>.";
+    }
+
+    const amount = submission.amount_due || (submission.votes ? submission.votes * 5 : 0);
+    amountEl.textContent = `$${amount}`;
+    methodEl.textContent = submission.payment_method || "—";
+
+    const qrFile = qrMap[submission.payment_method];
+    if (qrFile) {
+      qrImg.src = qrFile;
+      qrWrap.style.display = "block";
+    }
+
+    document.getElementById("continueBtn").addEventListener("click", () => {
+      if (submission.upload_url) {
+        window.location.href = submission.upload_url;
+        return;
+      }
+      if (submission.upload_token) {
+        window.location.href = `upload.html?token=${encodeURIComponent(submission.upload_token)}`;
+        return;
+      }
+      window.location.href = "upload.html";
+    });
+  </script>
+</body>
+</html>
+ 200 changes: 200 additions & 0 deletions200  
+register.html
+Original file line number	Diff line number	Diff line change
+@@ -0,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Register</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;}
+    input{width:100%;border-radius:14px;border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px;}
+    .grid{display:grid;gap:12px}
+    @media(min-width:700px){.two{grid-template-columns:1fr 1fr;}}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;overflow:auto;}
+    .ok{border-color:rgba(0,255,176,.25);background:rgba(0,255,176,.10)}
+    .err{border-color:rgba(255,36,90,.25);background:rgba(255,36,90,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Register your email</h1>
+      <p>We’ll send a verification code to confirm your vote.</p>
+
+      <form id="registerForm" class="grid">
+        <div class="grid two">
+          <div>
+            <label>Email (required)</label>
+            <input id="email" type="email" required placeholder="you@example.com" />
+          </div>
+          <div>
+            <label>City (required)</label>
+            <input id="city" type="text" required placeholder="e.g. Atlanta" />
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div>
+            <label>Name (optional)</label>
+            <input id="name" type="text" placeholder="First name or nickname" />
+          </div>
+          <div>
+            <label>Discord (optional)</label>
+            <input id="discord" type="text" placeholder="@name or name#1234" />
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="requestBtn" class="btn" type="submit">Send verification code</button>
+          <a class="btn secondary" href="landing.html">Back to landing</a>
+        </div>
+
+        <div id="ok" class="msg ok"></div>
+        <div id="err" class="msg err"></div>
+      </form>
+
+      <div class="divider"></div>
+
+      <h2 style="margin:0 0 6px;font-size:18px;">Enter your verification code</h2>
+      <p class="small">Already received a code? Verify it below.</p>
+
+      <form id="verifyForm" class="grid">
+        <div>
+          <label>Verification code</label>
+          <input id="code" type="text" placeholder="6-digit code" required />
+        </div>
+        <div class="row">
+          <button id="verifyBtn" class="btn" type="submit">Verify email</button>
+          <span id="verifyStatus" class="small"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // CHANGE THIS ONE LINE ONLY
+    const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
+
+    const STORAGE_KEY = "caliVotesProfile";
+
+    const $ = (id) => document.getElementById(id);
+    const ok = $("ok"), err = $("err");
+    const requestBtn = $("requestBtn");
+    const verifyBtn = $("verifyBtn");
+    const verifyStatus = $("verifyStatus");
+
+    function show(el, html){
+      ok.style.display="none"; err.style.display="none";
+      el.innerHTML = html;
+      el.style.display = "block";
+    }
+
+    function loadProfile(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    function saveProfile(update){
+      const next = { ...loadProfile(), ...update };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    }
+
+    async function post(action, payload){
+      const res = await fetch(EXEC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload })
+      });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return { error: text }; }
+    }
+
+    const existing = loadProfile();
+    if (existing.email) $("email").value = existing.email;
+    if (existing.city) $("city").value = existing.city;
+    if (existing.name) $("name").value = existing.name;
+    if (existing.discord) $("discord").value = existing.discord;
+
+    $("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      ok.style.display="none"; err.style.display="none";
+
+      if (!EXEC_URL || EXEC_URL.includes("PASTE_YOUR")) {
+        return show(err, `<b>Error:</b> Paste your Apps Script <code>/exec</code> URL into <code>EXEC_URL</code>.`);
+      }
+
+      requestBtn.disabled = true;
+
+      const payload = {
+        email: $("email").value.trim(),
+        city: $("city").value.trim(),
+        name_optional: $("name").value.trim(),
+        discord_handle_optional: $("discord").value.trim()
+      };
+
+      const res = await post("requestEmailCode", payload);
+      requestBtn.disabled = false;
+
+      if (res.error) {
+        return show(err, `<b>Error:</b><br><pre style="white-space:pre-wrap;margin:0">${res.error}</pre>`);
+      }
+
+      saveProfile({
+        email: payload.email,
+        city: payload.city,
+        name: payload.name_optional,
+        discord: payload.discord_handle_optional,
+        verified: false
+      });
+
+      show(ok, `<b>Check your email.</b> Enter the verification code below.`);
+    });
+
+    $("verifyForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      ok.style.display="none"; err.style.display="none";
+
+      const profile = loadProfile();
+      if (!profile.email) {
+        return show(err, `<b>Error:</b> Enter your email above first.`);
+      }
+
+      verifyBtn.disabled = true;
+      verifyStatus.textContent = "Verifying…";
+
+      const res = await post("verifyEmailCode", {
+        email: profile.email,
+        code: $("code").value.trim()
+      });
+
+      verifyBtn.disabled = false;
+      verifyStatus.textContent = "";
+
+      if (res.error) {
+        return show(err, `<b>Error:</b><br><pre style="white-space:pre-wrap;margin:0">${res.error}</pre>`);
+      }
+
+      const sessionToken = res.session_token || res.token || res.verification_token || "";
+      saveProfile({ verified: true, session_token: sessionToken });
+
+      show(ok, `<b>Verified.</b> Sending you to vote setup…`);
+      setTimeout(() => {
+        window.location.href = "vote.html";
+      }, 600);
+    });
+  </script>
+</body>
+</html>
+  55 changes: 52 additions & 3 deletions55  
+upload.html
+Original file line number	Diff line number	Diff line change
+@@ -37,6 +37,15 @@
+      <h1>Upload payment screenshot</h1>
+      <p>Use the link from your email. If your link is expired, submit a new vote claim to get a fresh upload link.</p>
+
+      <div class="card" style="background:rgba(255,255,255,.02);margin-bottom:12px;">
+        <div class="small" style="margin-bottom:6px;">Have a token? Paste it to continue.</div>
+        <div class="row">
+          <input id="tokenInput" type="text" placeholder="Paste upload token" />
+          <button id="applyToken" type="button">Use token</button>
+        </div>
+        <div class="small" id="savedToken" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="drop" id="drop">
+        <div style="font-weight:800;margin-bottom:6px;">Drag & drop an image here</div>
+        <div class="small">…or choose a file:</div>
+@@ -52,6 +61,10 @@ <h1>Upload payment screenshot</h1>
+      <div id="ok" class="msg ok"></div>
+      <div id="err" class="msg err"></div>
+
+      <div class="row" style="margin-top:12px;">
+        <a href="landing.html" class="small" style="color:#7bd3ff">Back to landing</a>
+      </div>
+
+      <div class="small" style="margin-top:12px;opacity:.85">
+        If you have trouble uploading, email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+      </div>
+@@ -62,23 +75,50 @@ <h1>Upload payment screenshot</h1>
+    // CHANGE THIS ONE LINE ONLY
+    const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
+
+    const SUBMISSION_KEY = "caliVotesSubmission";
+
+    const $ = (id) => document.getElementById(id);
+    const ok = $("ok"), err = $("err");
+    const uploadBtn = $("uploadBtn");
+    const fileInput = $("file");
+    const preview = $("preview");
+    const tokenText = $("tokenText");
+    const tokenInput = $("tokenInput");
+    const savedToken = $("savedToken");
+
+    function show(el, html){
+      ok.style.display="none"; err.style.display="none";
+      el.innerHTML = html;
+      el.style.display="block";
+      el.style.display = "block";
+    }
+
+    function loadSubmission(){
+      try { return JSON.parse(localStorage.getItem(SUBMISSION_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    const token = new URLSearchParams(location.search).get("token") || "";
+    tokenText.textContent = token || "—";
+    function resolveToken(){
+      return new URLSearchParams(location.search).get("token") || "";
+    }
+
+    function updateTokenDisplay(token){
+      tokenText.textContent = token || "—";
+      uploadBtn.disabled = !token || !base64Image;
+    }
+
+    let token = resolveToken();
+    let base64Image = "";
+    updateTokenDisplay(token);
+
+    const submission = loadSubmission();
+    const fallbackToken = submission.upload_token || "";
+    if (fallbackToken && !token) {
+      savedToken.innerHTML = `Saved token found. <button id=\"useSaved\" type=\"button\">Use saved token</button>`;
+      document.getElementById("useSaved").addEventListener("click", () => {
+        token = fallbackToken;
+        updateTokenDisplay(token);
+      });
+    }
+
+    function readFileAsDataURL(file){
+      return new Promise((resolve, reject) => {
+@@ -122,6 +162,15 @@ <h1>Upload payment screenshot</h1>
+      catch (er){ show(err, `<b>Error:</b> ${String(er)}`); }
+    });
+
+    $("applyToken").addEventListener("click", () => {
+      const entered = tokenInput.value.trim();
+      if (!entered) {
+        return show(err, `<b>Error:</b> Paste your upload token first.`);
+      }
+      token = entered;
+      updateTokenDisplay(token);
+    });
+
+    uploadBtn.addEventListener("click", async () => {
+      ok.style.display="none"; err.style.display="none";
+
+ 180 changes: 180 additions & 0 deletions180  
+vote.html
+Original file line number	Diff line number	Diff line change
+@@ -0,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Vote Setup</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;}
+    input,select{width:100%;border-radius:14px;border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px;}
+    .grid{display:grid;gap:12px}
+    @media(min-width:700px){.two{grid-template-columns:1fr 1fr;}}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;overflow:auto;}
+    .ok{border-color:rgba(0,255,176,.25);background:rgba(0,255,176,.10)}
+    .err{border-color:rgba(255,36,90,.25);background:rgba(255,36,90,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Vote setup</h1>
+      <p>Confirm your vote count and payment method.</p>
+
+      <div id="alert" class="msg err"></div>
+
+      <form id="voteForm" class="grid">
+        <div class="grid two">
+          <div>
+            <label>Votes claimed</label>
+            <input id="votes" type="number" min="1" max="1000" step="1" value="1" required />
+            <div class="small" id="amountLine" style="margin-top:6px;">Amount due: $5</div>
+          </div>
+          <div>
+            <label>Payment method</label>
+            <select id="payment" required>
+              <option value="">Select…</option>
+              <option value="CashApp">CashApp</option>
+              <option value="Venmo">Venmo</option>
+              <option value="SOL">SOL</option>
+              <option value="ETH">ETH</option>
+              <option value="BTC">BTC</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="submitBtn" class="btn" type="submit">Continue to payment</button>
+          <a class="btn secondary" href="landing.html">Back to landing</a>
+          <span class="small" id="statusLine"></span>
+        </div>
+
+        <div id="ok" class="msg ok"></div>
+        <div id="err" class="msg err"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // CHANGE THIS ONE LINE ONLY
+    const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
+
+    const PROFILE_KEY = "caliVotesProfile";
+    const SUBMISSION_KEY = "caliVotesSubmission";
+
+    const $ = (id) => document.getElementById(id);
+    const ok = $("ok"), err = $("err");
+    const submitBtn = $("submitBtn");
+    const statusLine = $("statusLine");
+    const amountLine = $("amountLine");
+    const alertBox = $("alert");
+
+    function show(el, html){
+      ok.style.display="none"; err.style.display="none";
+      el.innerHTML = html;
+      el.style.display = "block";
+    }
+
+    function loadProfile(){
+      try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    function saveSubmission(data){
+      localStorage.setItem(SUBMISSION_KEY, JSON.stringify(data));
+    }
+
+    async function post(action, payload){
+      const res = await fetch(EXEC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload })
+      });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return { error: text }; }
+    }
+
+    const profile = loadProfile();
+    if (!profile.verified) {
+      alertBox.style.display = "block";
+      alertBox.innerHTML = "<b>Not verified.</b> Please complete registration before setting up votes. <a href=\"register.html\" style=\"color:#7bd3ff\">Go to registration</a>.";
+      submitBtn.disabled = true;
+    }
+
+    $("votes").addEventListener("input", () => {
+      const v = Math.max(1, Math.min(1000, parseInt($("votes").value || "1", 10)));
+      $("votes").value = v;
+      amountLine.textContent = "Amount due: $" + (v * 5);
+    });
+
+    $("voteForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      ok.style.display="none"; err.style.display="none";
+
+      if (!EXEC_URL || EXEC_URL.includes("PASTE_YOUR")) {
+        return show(err, `<b>Error:</b> Paste your Apps Script <code>/exec</code> URL into <code>EXEC_URL</code>.`);
+      }
+
+      submitBtn.disabled = true;
+      statusLine.textContent = "Submitting…";
+
+      const votesClaimed = parseInt($("votes").value || "1", 10);
+
+      const payload = {
+        email: profile.email,
+        city: profile.city,
+        votes_claimed: votesClaimed,
+        payment_method_selected: $("payment").value,
+        name_optional: profile.name || "",
+        discord_handle_optional: profile.discord || "",
+        verification_token: profile.session_token || ""
+      };
+
+      const res = await post("submitVote", payload);
+
+      submitBtn.disabled = false;
+      statusLine.textContent = "";
+
+      if (res.error) {
+        return show(err, `<b>Error:</b><br><pre style="white-space:pre-wrap;margin:0">${res.error}</pre>`);
+      }
+
+      let uploadToken = res.token || "";
+      if (!uploadToken && res.upload_url) {
+        try {
+          const url = new URL(res.upload_url, window.location.href);
+          uploadToken = url.searchParams.get("token") || "";
+        } catch {
+          uploadToken = "";
+        }
+      }
+
+      saveSubmission({
+        votes: votesClaimed,
+        amount_due: votesClaimed * 5,
+        payment_method: $("payment").value,
+        upload_url: res.upload_url || "",
+        upload_token: uploadToken
+      });
+
+      show(ok, `<b>Saved.</b> Redirecting to payment…`);
+      setTimeout(() => {
+        window.location.href = "pay.html";
+      }, 500);
+    });
+  </script>
+</body>
+</html>
+Footer
+© 2026 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+Community
+Docs
+Contact
+Manage cookies
+Do not share my personal information
