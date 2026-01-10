@@ -53,6 +53,7 @@
       <div id="err" class="msg err"></div>
 
       <div class="small" style="margin-top:12px;opacity:.85">
+        If you need a new upload link, start at <a href="landing.html" style="color:#7bd3ff">landing.html</a>.
         If you have trouble uploading, email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
       </div>
     </div>
@@ -61,6 +62,7 @@
   <script>
     // CHANGE THIS ONE LINE ONLY
     const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
+    const STORAGE_KEY = "caliReignVoteFlow";
 
     const $ = (id) => document.getElementById(id);
     const ok = $("ok"), err = $("err");
@@ -75,7 +77,11 @@
       el.style.display="block";
     }
 
-    const token = new URLSearchParams(location.search).get("token") || "";
+    const storedState = (() => {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch { return {}; }
+    })();
+    const token = new URLSearchParams(location.search).get("token") || storedState.upload_token || "";
     tokenText.textContent = token || "—";
 
     let base64Image = "";

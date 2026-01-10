@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Tour Vote</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .list{margin:0 0 14px;padding-left:18px;color:var(--muted);line-height:1.45}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Cali Reign — Tour Vote</h1>
+      <p>$5 = 1 vote. Register, verify your email, claim votes, pay, then upload your screenshot.</p>
+
+      <ul class="list">
+        <li>Register your email + city.</li>
+        <li>Verify with the code we send.</li>
+        <li>Claim votes and pick your payment method.</li>
+        <li>Pay and upload proof.</li>
+      </ul>
+
+      <div class="row">
+        <a class="btn" href="register.html">Start registration</a>
+        <a class="btn secondary" href="upload.html">Already paid? Upload proof</a>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="row">
+        <a class="btn secondary" href="register.html#leaderboard" id="leaderBtn">View leaderboard</a>
+      </div>
+
+      <div class="small" style="margin-top:12px;opacity:.85">
+        Need another crypto? Email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec";
+    const LEADERBOARD_URL = EXEC_URL + "?page=leaderboard";
+
+    const leaderBtn = document.getElementById("leaderBtn");
+    leaderBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.open(LEADERBOARD_URL, "_blank", "noopener");
+    });
+  </script>
+</body>
+</html>

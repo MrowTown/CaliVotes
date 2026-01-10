@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Vote Setup</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;}
+    input,select{width:100%;border-radius:14px;border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px;}
+    .grid{display:grid;gap:12px}
+    @media(min-width:700px){.two{grid-template-columns:1fr 1fr;}}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .msg{margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--stroke);display:none;overflow:auto;}
+    .ok{border-color:rgba(0,255,176,.25);background:rgba(0,255,176,.10)}
+    .err{border-color:rgba(255,36,90,.25);background:rgba(255,36,90,.10)}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Vote setup</h1>
+      <p>Select your votes and payment method. We’ll show you the QR on the next screen.</p>
+
+      <div id="gate" class="msg err" style="display:none"></div>
+
+      <form id="voteForm" class="grid">
+        <div class="grid two">
+          <div>
+            <label>Votes claimed</label>
+            <input id="votes" type="number" min="1" max="1000" step="1" value="1" required />
+            <div class="small" id="amountLine" style="margin-top:6px;">Amount due: $5</div>
+          </div>
+          <div>
+            <label>Payment method</label>
+            <select id="payment" required>
+              <option value="">Select…</option>
+              <option value="CashApp">CashApp</option>
+              <option value="Venmo">Venmo</option>
+              <option value="SOL">SOL</option>
+              <option value="ETH">ETH</option>
+              <option value="BTC">BTC</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="submitBtn" class="btn" type="submit">Continue to payment</button>
+          <a class="btn secondary" href="register.html">Back to registration</a>
+          <span class="small" id="statusLine"></span>
+        </div>
+
+        <div id="ok" class="msg ok"></div>
+        <div id="err" class="msg err"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec";
+    const STORAGE_KEY = "caliReignVoteFlow";
+
+    const $ = (id) => document.getElementById(id);
+    const ok = $("ok"), err = $("err");
+    const submitBtn = $("submitBtn");
+    const statusLine = $("statusLine");
+    const amountLine = $("amountLine");
+    const gate = $("gate");
+
+    function show(el, html){
+      ok.style.display="none"; err.style.display="none";
+      el.innerHTML = html;
+      el.style.display="block";
+    }
+
+    function esc(s){
+      return String(s ?? "").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    function getState(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch { return {}; }
+    }
+
+    function setState(patch){
+      const next = { ...getState(), ...patch };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    }
+
+    async function post(action, payload){
+      const res = await fetch(EXEC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload })
+      });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return { error: text }; }
+    }
+
+    const state = getState();
+    if (!state.verified) {
+      gate.style.display = "block";
+      gate.innerHTML = "Please verify your email first. <a href=\"register.html\" style=\"color:#7bd3ff\">Go back to registration</a>.";
+      submitBtn.disabled = true;
+    }
+
+    if (state.votes_claimed) {
+      $("votes").value = state.votes_claimed;
+      amountLine.textContent = "Amount due: $" + (state.votes_claimed * 5);
+    }
+    if (state.payment_method_selected) {
+      $("payment").value = state.payment_method_selected;
+    }
+
+    $("votes").addEventListener("input", () => {
+      const v = Math.max(1, Math.min(1000, parseInt($("votes").value || "1", 10)));
+      $("votes").value = v;
+      amountLine.textContent = "Amount due: $" + (v * 5);
+    });
+
+    $("voteForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      ok.style.display="none"; err.style.display="none";
+
+      if (!EXEC_URL || EXEC_URL.includes("PASTE_YOUR")) {
+        return show(err, `<b>Error:</b> Paste your Apps Script <code>/exec</code> URL into <code>EXEC_URL</code>.`);
+      }
+
+      submitBtn.disabled = true;
+      statusLine.textContent = "Submitting…";
+
+      const payload = {
+        email: (state.email || "").trim(),
+        city: (state.city || "").trim(),
+        votes_claimed: parseInt($("votes").value || "1", 10),
+        payment_method_selected: $("payment").value,
+        name_optional: (state.name || "").trim(),
+        discord_handle_optional: (state.discord || "").trim(),
+        verification_token: state.verification_token || ""
+      };
+
+      const res = await post("submitVote", payload);
+
+      submitBtn.disabled = false;
+      statusLine.textContent = "";
+
+      if (res.error) {
+        return show(err, `<b>Error:</b><br><pre style="white-space:pre-wrap;margin:0">${esc(res.error)}</pre>`);
+      }
+
+      const nextState = setState({
+        votes_claimed: payload.votes_claimed,
+        payment_method_selected: payload.payment_method_selected,
+        amount_due: payload.votes_claimed * 5,
+        upload_url: res.upload_url || "",
+        upload_token: res.upload_token || res.token || ""
+      });
+
+      if (!nextState.upload_url && nextState.upload_token) {
+        nextState.upload_url = `upload.html?token=${encodeURIComponent(nextState.upload_token)}`;
+        setState(nextState);
+      }
+
+      window.location.href = "pay.html";
+    });
+  </script>
+</body>
+</html>

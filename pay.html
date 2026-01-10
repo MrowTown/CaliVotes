@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cali Reign — Payment</title>
+  <style>
+    :root{--bg:#0b0b0f;--card:#141420;--stroke:rgba(255,255,255,.10);--muted:rgba(255,255,255,.70);--txt:#fff;--pink:#ff2da6;--input:#0f0f18;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);}
+    .wrap{max-width:780px;margin:0 auto;padding:18px;}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;}
+    h1{margin:0 0 6px;font-size:22px;}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--pink);color:#000;}
+    .btn.secondary{background:transparent;border:1px solid var(--stroke);color:var(--txt);}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .small{font-size:12px;color:var(--muted)}
+    .qrWrap{margin-top:10px;border:1px solid var(--stroke);border-radius:16px;padding:12px;background:rgba(255,255,255,.03)}
+    .qrWrap img{max-width:280px;width:100%;border-radius:14px;border:1px solid var(--stroke);display:block}
+    .divider{height:1px;background:var(--stroke);margin:14px 0;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Payment & invoice</h1>
+      <p>Amount due: <strong id="amount">$0</strong></p>
+      <p class="small" id="methodLine"></p>
+
+      <div class="qrWrap" id="qrWrap" style="display:none;">
+        <div class="small" style="margin-bottom:8px;">Scan to pay:</div>
+        <img id="qrImg" alt="Payment QR" />
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="row">
+        <button id="continueBtn" class="btn">Continue to Upload Proof</button>
+        <button id="emailBtn" class="btn secondary" type="button">Email me the link</button>
+        <a class="btn secondary" href="vote.html">Back to vote setup</a>
+      </div>
+
+      <div class="small" style="margin-top:12px;opacity:.85">
+        Need another crypto? Email <a href="mailto:voting@ifuckfans.com" style="color:#7bd3ff">voting@ifuckfans.com</a>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "caliReignVoteFlow";
+    const qrMap = {
+      "CashApp": "cashapp-qr.png",
+      "Venmo": "venmo-qr.png",
+      "SOL": "sol-qr.png",
+      "ETH": "eth-qr.png",
+      "BTC": "btc-qr.png"
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function getState(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch { return {}; }
+    }
+
+    const state = getState();
+    const amount = state.amount_due || (state.votes_claimed ? state.votes_claimed * 5 : 0);
+    $("amount").textContent = "$" + amount;
+    $("methodLine").textContent = state.payment_method_selected ? `Payment method: ${state.payment_method_selected}` : "";
+
+    const file = qrMap[state.payment_method_selected];
+    if (file) {
+      $("qrImg").src = file;
+      $("qrWrap").style.display = "block";
+    }
+
+    $("continueBtn").addEventListener("click", () => {
+      if (state.upload_url) {
+        window.location.href = state.upload_url;
+        return;
+      }
+      if (state.upload_token) {
+        window.location.href = `upload.html?token=${encodeURIComponent(state.upload_token)}`;
+        return;
+      }
+      window.location.href = "upload.html";
+    });
+
+    $("emailBtn").addEventListener("click", () => {
+      const email = encodeURIComponent(state.email || "");
+      const subject = encodeURIComponent("Cali Reign vote upload link");
+      const body = encodeURIComponent("Please email me my upload link.\n\nEmail: " + (state.email || ""));
+      window.location.href = `mailto:voting@ifuckfans.com?subject=${subject}&body=${body}`;
+    });
+  </script>
+</body>
+</html>
