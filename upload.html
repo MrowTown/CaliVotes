@@ -60,7 +60,7 @@
 
   <script>
     // CHANGE THIS ONE LINE ONLY
-    const EXEC_URL = "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
+     const EXEC_URL = window.EXEC_URL || "https://script.google.com/macros/s/AKfycbywL3IjYYXKwSG4DwpULVPu-xKN083DN1MlJ0ZY71ec1xGUeqmvakkw6Y3BwoKue_cdNw/exec"; // must end with /exec
 
     const $ = (id) => document.getElementById(id);
     const ok = $("ok"), err = $("err");
